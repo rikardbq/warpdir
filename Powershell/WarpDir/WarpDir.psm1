@@ -73,7 +73,17 @@ function wd {
                     if (-join $wd_conf_filtered -eq -join $wd_conf) {
                         throw $ERROR_ALIAS_NOT_EXIST
                     }
-                    Write-Output $wd_conf_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
+                    $wd_prompted = $true
+                    while ($wd_prompted) {
+                        $wd_alias_remove = Read-Host "are you sure you want to remove alias [ $cmd2 ]? (N/y)"
+                        if ($wd_alias_remove -eq "" -or $wd_alias_remove -ieq "n") {
+                            Write-Output "nothing changed"
+                            $wd_prompted = $false
+                        } elseif ($wd_alias_remove -ieq "y") {
+                            Write-Output $wd_conf_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
+                            $wd_prompted = $false
+                        }
+                    }
                 }
                 $WD_CMDS[3] { #list
                     (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
