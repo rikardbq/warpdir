@@ -53,7 +53,7 @@ function Warp {
                     Write-Output $wd_conf_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
                 }
                 "list" {
-                    $wd_conf[1..($wd_conf.Length - 1)] | ForEach-Object {
+                    (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
                             Alias = $wd_alias_split[0];
