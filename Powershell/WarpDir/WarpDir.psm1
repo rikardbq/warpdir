@@ -86,13 +86,31 @@ function wd {
                     }
                 }
                 $WD_CMDS[3] { #list
-                    (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
+                    $wd_items_list = (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
                             Alias = $wd_alias_split[0];
                             Target = $wd_alias_split[1];
                         }
-                    } | Format-Table
+                    }
+                    switch ($cmd2) {
+                        "--sort" {
+                            switch ($cmd3) {
+                                "alias" {
+                                    return $wd_items_list | Sort-Object { $_.Alias }
+                                }
+                                "target" {
+                                    return $wd_items_list | Sort-Object { $_.Target }
+                                }
+                                default {
+                                    return $wd_items_list | Sort-Object { $_.Alias }
+                                }
+                            }
+                        }
+                        default {
+                            $wd_items_list
+                        }
+                    }
                 }
                 default {
                     $wd_conf_filtered = $wd_conf | Where-Object {
