@@ -72,6 +72,8 @@ function wd {
     }
     if ($cmd1) {
         if ((Test-Path -Path $cmd1)) {
+            $global:WD_PREV_PWD[0] = $PWD
+            $global:WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
         } else {
             $wd_conf = get_conf_rows
