@@ -3,16 +3,38 @@ Put the WarpDir folder into one of the Powershell module paths, you can find the
 Then in your `$PROFILE` file just add `Import-Module -Name WarpDir`\
 Any config will be located at `$HOME/.wd/`
 
+## Usage
+**Show a list of supported commands and usage**\
+`$ wd help`
+
+**Saving current directory as an alias**\
+`$ wd save dev`
+
+**Listing all aliases and their targets**\
+`$ wd list`\
+optional sort flag, can sort on date(default), alias and target\
+`$ wd list --sort target`
+
+**Rename an alias**\
+`$ wd rename dev new_dev`
+
+**Remove an alias(will be prompted to confirm)**\
+`$ wd remove new_dev`
+
+
+---
+---
+---
+
 ## Breaking change in commit _**dc09d6a**_ (added timestamps)
 ### _**\#\#\# YOU ONLY NEED TO DO THIS IF YOU USED WarpDir BEFORE THIS COMMIT \#\#\#**_
-Your config should look something like this
-
+Your config should look something like this\
 ![before](example_before.png)
 
 In order to migrate the conf to the new format, run the following:
+```
+cp ~/.wd/dirs ~/.wd/dirs_bkp && Write-Output $((Get-Content -Path "$HOME/.wd/dirs").Split("\r\n") | ForEach-Object { if ($_.Split("|").Count -eq 3) { break; } if ($_ -ne "///WD_PWSH_2026") { "$([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())|$_" } else { "$_" }}) > ~/.wd/dirs
+```
 
-`cp ~/.wd/dirs ~/.wd/dirs_bkp && Write-Output $((Get-Content -Path "$HOME/.wd/dirs").Split("\r\n") | ForEach-Object { if ($_.Split("|").Count -eq 3) { break; } if ($_ -ne "///WD_PWSH_2026") { "$([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())|$_" } else { "$_" }}) > ~/.wd/dirs`
-
-Config should look something like this afterwards
-
+Config should look something like this afterwards\
 ![after](example_after.png)

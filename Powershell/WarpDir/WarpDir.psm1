@@ -5,6 +5,7 @@ $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_HEADER = "///WD_PWSH_2026"
 $WD_CMDS = @{
+    HELP = "help";
     SAVE = "save";
     RENAME = "rename";
     REMOVE = "remove";
@@ -75,15 +76,18 @@ function wd {
         } else {
             $wd_conf = get_conf_rows
             switch ($cmd1) {
+                $WD_CMDS.HELP {
+                    Write-Output "Commands:`n`n`tlist [--sort [date, alias, target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
+                }
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
                         throw $ERROR_ALIAS_NOT_PROVIDED
                     }
+                    if ($WD_CMDS.Values.Contains($cmd2)) {
+                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
+                    }
                     if (alias_exists($cmd2)) {
                         throw $ERROR_ALIAS_ALREADY_EXIST
-                    }
-                    if ($WD_CMDS.Values.Contains($cmd3)) {
-                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
                     $global:WD_PREV_PWD[0] = $PWD
                     Write-Output "$(get_current_millis)|$cmd2|$PWD" >> "$HOME/$WD_ROOT/$WD_DIRS"
