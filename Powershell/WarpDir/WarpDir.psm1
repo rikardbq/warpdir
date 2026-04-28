@@ -147,7 +147,7 @@ function wd {
                         "--sort" {
                             switch ($cmd3) {
                                 "date" {
-                                    return $default_list
+                                    return $default_list | Sort-Object { $_.Date }
                                 }
                                 "alias" {
                                     return $default_list | Sort-Object { $_.Alias }
