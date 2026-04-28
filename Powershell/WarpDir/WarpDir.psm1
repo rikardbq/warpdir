@@ -3,7 +3,6 @@ $global:WD_PREV_PWD = ($null, $null)
 
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
-$WD_HEADER = "///WD_PWSH_2026"
 $WD_CMDS = @{
     HELP = "help";
     SAVE = "save";
@@ -16,8 +15,9 @@ $ERROR_ALIAS_NOT_EXIST = "alias does not exist"
 $ERROR_ALIAS_ALREADY_EXIST = "alias already exist"
 $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "alias not allowed [$($WD_CMDS.Values -join ", ")] are reserved keywords"
 
-function get_conf_rows {
-    return (Get-Content -Path "$HOME/$WD_ROOT/$WD_DIRS").Split("\r\n")
+function get_wd_entries {
+    $entries = (Get-Content -Path "$HOME/$WD_ROOT/$WD_DIRS")
+    return (($entries.Count -gt 0) ? $entries.Split("\r\n") : @(""))
 }
 
 function alias_exists {
@@ -25,8 +25,7 @@ function alias_exists {
         [Parameter(Mandatory = $true)]
         $alias
     )
-    $wd_conf = get_conf_rows
-    foreach ($wd_conf_line in $wd_conf) {
+    foreach ($wd_conf_line in get_wd_entries) {
         $wd_alias = $wd_conf_line.Split("|")[1]
         if ($alias -eq $wd_alias) {
             return $true
@@ -68,7 +67,7 @@ function wd {
         New-Item -Path ~/ -Name $WD_ROOT -ItemType "Directory" | Out-Null
     }
     if (-not (Test-Path -Path "$HOME/$WD_ROOT/$WD_DIRS")) {
-        Write-Output $WD_HEADER >> "$HOME/$WD_ROOT/$WD_DIRS"
+        Write-Output "" >> "$HOME/$WD_ROOT/$WD_DIRS"
     }
     if ($cmd1) {
         if ((Test-Path -Path $cmd1)) {
@@ -76,7 +75,6 @@ function wd {
             $global:WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
         } else {
-            $wd_conf = get_conf_rows
             switch ($cmd1) {
                 $WD_CMDS.HELP {
                     Write-Output "Commands:`n`n`tlist [--sort [date, alias, target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
@@ -85,7 +83,7 @@ function wd {
                     if (-not $cmd2) {
                         throw $ERROR_ALIAS_NOT_PROVIDED
                     }
-                    if ($WD_CMDS.Values.Contains($cmd2)) {
+                    if ($WD_CMDS.Values.Contains($cmd2) -eq $true) {
                         throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
                     if (alias_exists($cmd2)) {
@@ -101,10 +99,10 @@ function wd {
                     if (-not (alias_exists($cmd2))) {
                         throw $ERROR_ALIAS_NOT_EXIST
                     }
-                    if ($WD_CMDS.Values.Contains($cmd3)) {
+                    if ($WD_CMDS.Values.Contains($cmd3) -eq $true) {
                         throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
-                    $wd_conf_mapped = $wd_conf | ForEach-Object {
+                    $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         if ($cmd2 -eq $wd_alias_split[1]) {
                             "$(get_current_millis)|$cmd3|$($wd_alias_split[2])"
@@ -112,7 +110,7 @@ function wd {
                             $_
                         }
                     }
-                    Write-Output $wd_conf_mapped > "$HOME/$WD_ROOT/$WD_DIRS"
+                    Write-Output $wd_entries_mapped > "$HOME/$WD_ROOT/$WD_DIRS"
                 }
                 $WD_CMDS.REMOVE {
                     if (-not $cmd2) {
@@ -128,19 +126,19 @@ function wd {
                             Write-Output "nothing changed"
                             $wd_prompted = $false
                         } elseif ($wd_alias_remove -ieq "y") {
-                            $wd_conf_filtered = $wd_conf | Where-Object {
+                            $wd_entries_filtered = get_wd_entries | Where-Object {
                                 $cmd2 -ne $_.Split("|")[1]
                             }
-                            Write-Output $wd_conf_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
+                            Write-Output $wd_entries_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
                             $wd_prompted = $false
                         }
                     }
                 }
                 $WD_CMDS.LIST {
-                    $default_list = (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
+                    $default_list = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
-                            Date = timestamp_to_date($wd_alias_split[0]);
+                            Date = $wd_alias_split[0] ? (timestamp_to_date($wd_alias_split[0])) : $null;
                             Alias = $wd_alias_split[1];
                             Target = $wd_alias_split[2];
                         }
@@ -168,14 +166,14 @@ function wd {
                     }
                 }
                 default {
-                    $wd_conf_filtered = $wd_conf | Where-Object {
+                    $wd_entries_filtered = get_wd_entries | Where-Object {
                         $cmd1 -eq $_.Split("|")[1]
                     }
-                    if (-not $wd_conf_filtered) {
+                    if (-not $wd_entries_filtered) {
                         throw $ERROR_ALIAS_NOT_EXIST
                     }
                     $global:WD_PREV_PWD[0] = $PWD
-                    $global:WD_PREV_PWD[1] = $wd_conf_filtered.Split("|")[2]
+                    $global:WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[2]
                     Set-Location $global:WD_PREV_PWD[1]
                 }
             }
@@ -187,8 +185,7 @@ function wd {
 
 Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $wd_conf = get_conf_rows
-    $completions = $WD_CMDS.Values + (($wd_conf.Length -gt 1) ? $wd_conf[1..($wd_conf.Length - 1)] : ("")) | ForEach-Object {
+    $completions = $WD_CMDS.Values + (get_wd_entries) | ForEach-Object {
         $cmd_split = $_.Split("|")
         if ($cmd_split.Count -eq 1) {
             $cmd_split
