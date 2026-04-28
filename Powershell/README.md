@@ -3,7 +3,8 @@ Put the WarpDir folder into one of the Powershell module paths, you can find the
 Then in your `$PROFILE` file just add `Import-Module -Name WarpDir`\
 Any config will be located at `$HOME/.wd/`
 
-## Breaking change in commit dc09d6a (added timestamps)
+## Breaking change in commit _**dc09d6a**_ (added timestamps)
+### _**\#\#\# YOU ONLY NEED TO DO THIS IF YOU USED WarpDir BEFORE THIS COMMIT \#\#\#**_
 Your config should look something like this
 
 ![before](example_before.png)
