@@ -1,9 +1,6 @@
 # WarpDir <3
 $global:WD_PREV_PWD = ($null, $null)
 
-$ERROR_ALIAS_NOT_PROVIDED = "alias not provided"
-$ERROR_ALIAS_NOT_EXIST = "alias does not exist"
-$ERROR_ALIAS_ALREADY_EXIST = "alias already exist"
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_HEADER = "///WD_PWSH_2026"
@@ -13,6 +10,10 @@ $WD_CMDS = @{
     REMOVE = "remove";
     LIST = "list";
 }
+$ERROR_ALIAS_NOT_PROVIDED = "alias not provided"
+$ERROR_ALIAS_NOT_EXIST = "alias does not exist"
+$ERROR_ALIAS_ALREADY_EXIST = "alias already exist"
+$ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "alias not allowed [$($WD_CMDS.Values -join ", ")] are reserved keywords"
 
 function get_conf_rows {
     return (Get-Content -Path "$HOME/$WD_ROOT/$WD_DIRS").Split("\r\n")
@@ -81,6 +82,9 @@ function wd {
                     if (alias_exists($cmd2)) {
                         throw $ERROR_ALIAS_ALREADY_EXIST
                     }
+                    if ($WD_CMDS.Values.Contains($cmd3)) {
+                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
+                    }
                     $global:WD_PREV_PWD[0] = $PWD
                     Write-Output "$(get_current_millis)|$cmd2|$PWD" >> "$HOME/$WD_ROOT/$WD_DIRS"
                 }
@@ -90,6 +94,9 @@ function wd {
                     }
                     if (-not (alias_exists($cmd2))) {
                         throw $ERROR_ALIAS_NOT_EXIST
+                    }
+                    if ($WD_CMDS.Values.Contains($cmd3)) {
+                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
                     $wd_conf_mapped = $wd_conf | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
