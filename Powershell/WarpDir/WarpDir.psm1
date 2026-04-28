@@ -17,7 +17,7 @@ $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "alias not allowed [$($WD_CMDS.Value
 
 function get_wd_entries {
     $entries = (Get-Content -Path "$HOME/$WD_ROOT/$WD_DIRS")
-    return (($entries.Count -gt 0) ? $entries.Split("\r\n") : @(""))
+    return $entries.Count -gt 0 ? $entries.Split("\r\n") : @()
 }
 
 function alias_exists {
@@ -99,6 +99,9 @@ function wd {
                     if (-not (alias_exists($cmd2))) {
                         throw $ERROR_ALIAS_NOT_EXIST
                     }
+                    if (alias_exists($cmd3)) {
+                        throw $ERROR_ALIAS_ALREADY_EXIST
+                    }
                     if ($WD_CMDS.Values.Contains($cmd3) -eq $true) {
                         throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
@@ -135,7 +138,7 @@ function wd {
                     }
                 }
                 $WD_CMDS.LIST {
-                    $default_list = get_wd_entries | ForEach-Object {
+                    $default_list = ((get_wd_entries).Count -gt 0 ? (get_wd_entries) : @("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
                             Date = $wd_alias_split[0] ? (timestamp_to_date($wd_alias_split[0])) : $null;
