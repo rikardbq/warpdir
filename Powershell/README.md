@@ -8,6 +8,4 @@ In order to migrate the conf to the new format, run the following:
 
 `$ cp ~/.wd/dirs ~/.wd/dirs_bkp`
 
-`$wd_map = (Get-Content -Path "$HOME/.wd/dirs").Split("\r\n") | ForEach-Object { if ($_ -ne "///WD_PWSH_2026") { "$([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())|$_" } else { "$_" }}`
-
-`Write-Output $wd_map > ~/.wd/dirs`
+`Write-Output $((Get-Content -Path "$HOME/.wd/dirs").Split("\r\n") | ForEach-Object { if ($_ -ne "///WD_PWSH_2026") { "$([System.DateTimeOffset]::Now.ToUnixTimeMilliseconds())|$_" } else { "$_" }}) > ~/.wd/dirs`
