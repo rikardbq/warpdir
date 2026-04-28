@@ -64,10 +64,10 @@ function wd {
         $cmd3
     )
     if (-not (Test-Path -Path "$HOME/$WD_ROOT")) {
-        New-Item -Path ~/ -Name $WD_ROOT -ItemType "Directory" | Out-Null
+        New-Item -Path ~/ -Name $WD_ROOT -ItemType Directory | Out-Null
     }
     if (-not (Test-Path -Path "$HOME/$WD_ROOT/$WD_DIRS")) {
-        Write-Output "" >> "$HOME/$WD_ROOT/$WD_DIRS"
+        New-Item -Path "$HOME/$WD_ROOT/$WD_DIRS" -ItemType File | Out-Null
     }
     if ($cmd1) {
         if ((Test-Path -Path $cmd1)) {
