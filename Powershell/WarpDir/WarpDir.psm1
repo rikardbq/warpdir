@@ -1,8 +1,8 @@
 # WarpDir <3
-$global:WD_PREV_PWD = ($null, $null)
-
+$WD_PREV_PWD = ($null, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
+$WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
 $WD_CMDS = @{
     HELP = "help";
     SAVE = "save";
@@ -16,7 +16,7 @@ $ERROR_ALIAS_ALREADY_EXIST = "alias already exist"
 $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "alias not allowed [$($WD_CMDS.Values -join ", ")] are reserved keywords"
 
 function get_wd_entries {
-    $entries = (Get-Content -Path "$HOME/$WD_ROOT/$WD_DIRS")
+    $entries = (Get-Content -Path $WD_FULL_PATH)
     return $entries.Count -gt 0 ? $entries.Split("\r\n") : @()
 }
 
@@ -66,13 +66,13 @@ function wd {
     if (-not (Test-Path -Path "$HOME/$WD_ROOT")) {
         New-Item -Path ~/ -Name $WD_ROOT -ItemType Directory | Out-Null
     }
-    if (-not (Test-Path -Path "$HOME/$WD_ROOT/$WD_DIRS")) {
-        New-Item -Path "$HOME/$WD_ROOT/$WD_DIRS" -ItemType File | Out-Null
+    if (-not (Test-Path -Path $WD_FULL_PATH)) {
+        New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
         if ((Test-Path -Path $cmd1)) {
-            $global:WD_PREV_PWD[0] = $PWD
-            $global:WD_PREV_PWD[1] = $cmd1
+            $WD_PREV_PWD[0] = $PWD
+            $WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
         } else {
             switch ($cmd1) {
@@ -89,8 +89,8 @@ function wd {
                     if (alias_exists($cmd2)) {
                         throw $ERROR_ALIAS_ALREADY_EXIST
                     }
-                    $global:WD_PREV_PWD[0] = $PWD
-                    Write-Output "$(get_current_millis)|$cmd2|$PWD" >> "$HOME/$WD_ROOT/$WD_DIRS"
+                    $WD_PREV_PWD[0] = $PWD
+                    Write-Output "$(get_current_millis)|$cmd2|$PWD" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
@@ -113,7 +113,7 @@ function wd {
                             $_
                         }
                     }
-                    Write-Output $wd_entries_mapped > "$HOME/$WD_ROOT/$WD_DIRS"
+                    Write-Output $wd_entries_mapped > $WD_FULL_PATH
                 }
                 $WD_CMDS.REMOVE {
                     if (-not $cmd2) {
@@ -132,13 +132,14 @@ function wd {
                             $wd_entries_filtered = get_wd_entries | Where-Object {
                                 $cmd2 -ne $_.Split("|")[1]
                             }
-                            Write-Output $wd_entries_filtered > "$HOME/$WD_ROOT/$WD_DIRS"
+                            Write-Output $wd_entries_filtered > $WD_FULL_PATH
                             $wd_prompted = $false
                         }
                     }
                 }
                 $WD_CMDS.LIST {
-                    $default_list = ((get_wd_entries).Count -gt 0 ? (get_wd_entries) : @("")) | ForEach-Object {
+                    $wd_entries = get_wd_entries
+                    $default_list = ($wd_entries.Count -gt 0 ? $wd_entries : @("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
                             Date = $wd_alias_split[0] ? (timestamp_to_date($wd_alias_split[0])) : $null;
@@ -175,14 +176,14 @@ function wd {
                     if (-not $wd_entries_filtered) {
                         throw $ERROR_ALIAS_NOT_EXIST
                     }
-                    $global:WD_PREV_PWD[0] = $PWD
-                    $global:WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[2]
-                    Set-Location $global:WD_PREV_PWD[1]
+                    $WD_PREV_PWD[0] = $PWD
+                    $WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[2]
+                    Set-Location $WD_PREV_PWD[1]
                 }
             }
         }
-    } elseif ($global:WD_PREV_PWD[0]) {
-        Set-Location $global:WD_PREV_PWD[($PWD.ToString() -eq $global:WD_PREV_PWD[0].ToString()) ? 1 : 0]
+    } elseif ($WD_PREV_PWD[0]) {
+        Set-Location $WD_PREV_PWD[($PWD.ToString() -eq $WD_PREV_PWD[0].ToString()) ? 1 : 0]
     }
 }
 
