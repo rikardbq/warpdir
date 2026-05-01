@@ -83,7 +83,7 @@ function wd {
                     if (-not $cmd2) {
                         throw $ERROR_ALIAS_NOT_PROVIDED
                     }
-                    if ($WD_CMDS.Values.Contains($cmd2) -eq $true) {
+                    if ($WD_CMDS.Values -contains $cmd2) {
                         throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
                     if (alias_exists($cmd2)) {
@@ -102,7 +102,7 @@ function wd {
                     if (alias_exists($cmd3)) {
                         throw $ERROR_ALIAS_ALREADY_EXIST
                     }
-                    if ($WD_CMDS.Values.Contains($cmd3) -eq $true) {
+                    if ($WD_CMDS.Values -contains $cmd3) {
                         throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
