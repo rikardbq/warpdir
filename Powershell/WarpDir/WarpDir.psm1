@@ -36,10 +36,10 @@ function generate_error {
             throw "alias already exist"
         }
         $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED {
-            throw "alias not allowed [ $error_meta ] are reserved keywords"
+            throw "alias not allowed [$error_meta] are reserved keywords"
         }
         $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT {
-            throw "missing flag argument, provide one of [ $error_meta ]"
+            throw "missing flag argument, provide one of [$error_meta]"
         }
     }
 }
@@ -55,7 +55,7 @@ function alias_exists {
         $alias
     )
     foreach ($wd_conf_line in get_wd_entries) {
-        $wd_alias = $wd_conf_line.Split("|")[1]
+        $wd_alias = $wd_conf_line.Split("|")[0]
         if ($alias -eq $wd_alias) {
             return $true
         }
@@ -69,18 +69,6 @@ function print_remove_prompt {
         $alias
     )
     Read-Host "are you sure you want to remove alias [ $alias ]? (N/y)"
-}
-
-function get_current_millis {
-    return [System.DateTimeOffset]::Now.ToUnixTimeMilliseconds()
-}
-
-function timestamp_to_date {
-    param (
-        [Parameter(Mandatory = $true)]
-        $unix_timestamp_millis
-    )
-    return (Get-Date -UnixTimeSeconds ($unix_timestamp_millis / 1000))
 }
 
 function wd {
@@ -106,7 +94,7 @@ function wd {
         } else {
             switch ($cmd1) {
                 $WD_CMDS.HELP {
-                    Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [date, alias, target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
+                    Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [alias, target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
                 }
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
@@ -119,7 +107,7 @@ function wd {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     $WD_PREV_PWD[0] = $PWD
-                    Write-Output "$(get_current_millis)|$cmd2|$PWD" >> $WD_FULL_PATH
+                    Write-Output "$cmd2|$PWD" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
@@ -136,8 +124,8 @@ function wd {
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
-                        if ($cmd2 -eq $wd_alias_split[1]) {
-                            "$(get_current_millis)|$cmd3|$($wd_alias_split[2])"
+                        if ($cmd2 -eq $wd_alias_split[0]) {
+                            "$cmd3|$($wd_alias_split[1])"
                         } else {
                             $_
                         }
@@ -159,7 +147,7 @@ function wd {
                             $wd_prompted = $false
                         } elseif ($wd_alias_remove -ieq "y") {
                             $wd_entries_filtered = get_wd_entries | Where-Object {
-                                $cmd2 -ne $_.Split("|")[1]
+                                $cmd2 -ne $_.Split("|")[0]
                             }
                             Write-Output $wd_entries_filtered > $WD_FULL_PATH
                             $wd_prompted = $false
@@ -171,17 +159,13 @@ function wd {
                     $default_list = ($wd_entries.Count -gt 0 ? $wd_entries : @("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
-                            Date = $wd_alias_split[0] ? (timestamp_to_date $wd_alias_split[0]) : $null;
-                            Alias = $wd_alias_split[1];
-                            Target = $wd_alias_split[2];
+                            Alias = $wd_alias_split[0];
+                            Target = $wd_alias_split[1];
                         }
                     }
                     switch ($cmd2) {
                         "--sort" {
                             switch ($cmd3) {
-                                "date" {
-                                    return $default_list | Sort-Object { $_.Date }
-                                }
                                 "alias" {
                                     return $default_list | Sort-Object { $_.Alias }
                                 }
@@ -189,7 +173,7 @@ function wd {
                                     return $default_list | Sort-Object { $_.Target }
                                 }
                                 default {
-                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT "date, alias, target"
+                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT "alias, target"
                                 }
                             }
                         }
@@ -200,13 +184,13 @@ function wd {
                 }
                 default {
                     $wd_entries_filtered = get_wd_entries | Where-Object {
-                        $cmd1 -eq $_.Split("|")[1]
+                        $cmd1 -eq $_.Split("|")[0]
                     }
                     if (-not $wd_entries_filtered) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
                     $WD_PREV_PWD[0] = $PWD
-                    $WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[2]
+                    $WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[1]
                     Set-Location $WD_PREV_PWD[1]
                 }
             }
@@ -223,7 +207,7 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
         if ($cmd_split.Count -eq 1) {
             $cmd_split
         } else {
-            $cmd_split[1]
+            $cmd_split[0]
         }
     }
     $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
