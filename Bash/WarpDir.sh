@@ -7,7 +7,7 @@ WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
 WD_COMMANDS=("help" "save" "rename" "remove" "list")
 
 join_list_on() {
-    local IFS="$1"
+    local IFS=$1
     shift 1
     echo "$*"
 }
@@ -41,7 +41,7 @@ alias_exist() {
 
 is_reserved_keyword() {
     local reserved=0
-    for cmd in $WD_COMMANDS; do
+    for cmd in ${WD_COMMANDS[@]}; do
         if [ "$1" == "$cmd" ]; then
             reserved=1
             break;
@@ -58,6 +58,29 @@ goto_alias_target() {
         export WD_PREV_PWD=($PWD $target)
         cd $target
     fi
+}
+
+handle_remove() {
+    local wd_prompted=1
+    local filtered_entries=()
+    while [ $wd_prompted -eq 1 ]; do
+        read -p "are you sure you want to remove alias [ $1 ]? (N/y) " user_input
+        if [ "$user_input" == "" -o "${user_input,,}" == "n" ]; then
+            echo "nothing changed"
+            wd_prompted=0
+        elif [ "${user_input,,}" == "y" ]; then
+            for entry in $(get_wd_entries); do
+                local IFS="|"
+                read -ra split_entry <<< "$entry"
+                if [ "$1" != "${split_entry[0]}" ]; then
+                    filtered_entries+="$entry "
+                fi
+            done
+            local IFS=" "
+            echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
+            wd_prompted=0
+        fi
+    done
 }
 
 if [ ! -d "$HOME/$WD_ROOT" ]; then
@@ -77,7 +100,7 @@ if [ $1 ]; then
             if [ $(alias_exist $2) -eq 1 ]; then
                 echo "alias already exist"
             elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                echo "alias not allowed [$(join_list_on "," $WD_COMMANDS)] are reserved keywords"
+                echo "alias not allowed [$(join_list_on "," ${WD_COMMANDS[@]})] are reserved keywords"
             else
                 export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
                 echo "$2|$PWD" >> $WD_FULL_PATH
@@ -90,7 +113,15 @@ if [ $1 ]; then
         echo "rename!"
         ;;
     "remove")
-        echo "remove!"
+        if [ $2 ]; then
+            if [ $(alias_exist $2) -eq 0 ]; then
+                echo "alias does not exist"
+            else
+                handle_remove $2
+            fi
+        else
+            echo "alias not provided"
+        fi
         ;;
     "list")
         echo -e "Alias|Target\n-----|------\n$(get_wd_entries)" | column -ts "|"
