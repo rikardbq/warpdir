@@ -195,7 +195,7 @@ function wd {
                 }
             }
         }
-    } elseif ($WD_PREV_PWD[0]) {
+    } elseif ($WD_PREV_PWD[1]) {
         Set-Location $WD_PREV_PWD[($PWD.ToString() -eq $WD_PREV_PWD[0].ToString()) ? 1 : 0]
     }
 }
