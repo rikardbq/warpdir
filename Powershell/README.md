@@ -18,7 +18,7 @@ Any config will be located at `$HOME/.wd/`
 
 **Listing all aliases and their targets**\
 `$ wd list`\
-optional sort flag, can sort on date(default), alias and target\
+optional sort flag, can sort on alias and target\
 `$ wd list --sort target`
 
 **Rename an alias**\
