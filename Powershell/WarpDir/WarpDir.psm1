@@ -10,10 +10,39 @@ $WD_CMDS = @{
     REMOVE = "remove";
     LIST = "list";
 }
-$ERROR_ALIAS_NOT_PROVIDED = "alias not provided"
-$ERROR_ALIAS_NOT_EXIST = "alias does not exist"
-$ERROR_ALIAS_ALREADY_EXIST = "alias already exist"
-$ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "alias not allowed [$($WD_CMDS.Values -join ", ")] are reserved keywords"
+$WD_ERROR_KIND = @{
+    ALIAS_NOT_PROVIDED = "NOT_PROVIDED";
+    ALIAS_NOT_EXIST = "NOT_EXIST";
+    ALIAS_ALREADY_EXIST = "ALREADY_EXIST";
+    ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "NOT_ALLOWED_KEYWORD_RESERVED";
+    FLAG_SORT_MISSING_ARGUMENT = "MISSING_ARGUMENT";
+}
+
+function generate_error {
+    param(
+        [Parameter(Mandatory = $true)]
+        $error_kind,
+        [Parameter(Mandatory = $false)]
+        $error_meta
+    )
+    switch ($error_kind) {
+        $WD_ERROR_KIND.ALIAS_NOT_PROVIDED {
+            throw "alias not provided"
+        }
+        $WD_ERROR_KIND.ALIAS_NOT_EXIST {
+            throw "alias does not exist"
+        }
+        $WD_ERROR_KIND.ALIAS_ALREADY_EXIST {
+            throw "alias already exist"
+        }
+        $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED {
+            throw "alias not allowed [ $error_meta ] are reserved keywords"
+        }
+        $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT {
+            throw "missing flag argument, provide one of [ $error_meta ]"
+        }
+    }
+}
 
 function get_wd_entries {
     $entries = (Get-Content -Path $WD_FULL_PATH)
@@ -81,29 +110,29 @@ function wd {
                 }
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
-                        throw $ERROR_ALIAS_NOT_PROVIDED
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
                     if ($WD_CMDS.Values -contains $cmd2) {
-                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join ", ")
                     }
-                    if (alias_exists($cmd2)) {
-                        throw $ERROR_ALIAS_ALREADY_EXIST
+                    if (alias_exists $cmd2) {
+                        generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     $WD_PREV_PWD[0] = $PWD
                     Write-Output "$(get_current_millis)|$cmd2|$PWD" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
-                        throw $ERROR_ALIAS_NOT_PROVIDED
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
-                    if (-not (alias_exists($cmd2))) {
-                        throw $ERROR_ALIAS_NOT_EXIST
+                    if (-not (alias_exists $cmd2)) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
-                    if (alias_exists($cmd3)) {
-                        throw $ERROR_ALIAS_ALREADY_EXIST
+                    if (alias_exists $cmd3) {
+                        generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     if ($WD_CMDS.Values -contains $cmd3) {
-                        throw $ERROR_ALIAS_NOT_ALLOWED_KEYWORD_RESERVED
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join ", ")
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
@@ -117,14 +146,14 @@ function wd {
                 }
                 $WD_CMDS.REMOVE {
                     if (-not $cmd2) {
-                        throw $ERROR_ALIAS_NOT_PROVIDED
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
-                    if (-not (alias_exists($cmd2))) {
-                        throw $ERROR_ALIAS_NOT_EXIST
+                    if (-not (alias_exists $cmd2)) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
                     $wd_prompted = $true
                     while ($wd_prompted) {
-                        $wd_alias_remove = print_remove_prompt($cmd2)
+                        $wd_alias_remove = print_remove_prompt $cmd2
                         if ($wd_alias_remove -eq "" -or $wd_alias_remove -ieq "n") {
                             Write-Output "nothing changed"
                             $wd_prompted = $false
@@ -142,7 +171,7 @@ function wd {
                     $default_list = ($wd_entries.Count -gt 0 ? $wd_entries : @("")) | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         [pscustomobject]@{
-                            Date = $wd_alias_split[0] ? (timestamp_to_date($wd_alias_split[0])) : $null;
+                            Date = $wd_alias_split[0] ? (timestamp_to_date $wd_alias_split[0]) : $null;
                             Alias = $wd_alias_split[1];
                             Target = $wd_alias_split[2];
                         }
@@ -160,7 +189,7 @@ function wd {
                                     return $default_list | Sort-Object { $_.Target }
                                 }
                                 default {
-                                    return $default_list
+                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT "date, alias, target"
                                 }
                             }
                         }
@@ -174,7 +203,7 @@ function wd {
                         $cmd1 -eq $_.Split("|")[1]
                     }
                     if (-not $wd_entries_filtered) {
-                        throw $ERROR_ALIAS_NOT_EXIST
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
                     $WD_PREV_PWD[0] = $PWD
                     $WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[2]
