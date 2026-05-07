@@ -175,3 +175,5 @@ elif [ ${WD_PREV_PWD[1]} ]; then
         cd ${WD_PREV_PWD[1]}
     fi
 fi
+
+complete -W "$(join_list_on " " ${WD_COMMANDS[@]})" wd
