@@ -87,6 +87,21 @@ handle_remove() {
     done
 }
 
+handle_rename() {
+    local filtered_entries=()
+    for entry in $(get_wd_entries); do
+        local IFS="|"
+        read -ra split_entry <<< "$entry"
+        if [ "$1" == "${split_entry[0]}" ]; then
+            filtered_entries+="$2|${split_entry[1]} "
+        else
+            filtered_entries+="$entry "
+        fi
+    done
+    local IFS=" "
+    echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
+}
+
 if [ ! -d "$HOME/$WD_ROOT" ]; then
     mkdir $HOME/$WD_ROOT
 fi
@@ -114,7 +129,22 @@ if [ $1 ]; then
         fi
         ;;
     "rename")
-        echo "rename!"
+        if [ $2 -a $3 ]; then
+            if [ $(alias_exist $2) -eq 0 ]; then
+                echo "alias does not exist"
+                return
+            fi
+            if [ $(alias_exist $3) -eq 1 ]; then
+                echo "alias already exist"
+                return
+            elif [ $(is_reserved_keyword $3) -eq 1 ]; then
+                echo "alias not allowed [$(join_list_on "," ${WD_COMMANDS[@]})] are reserved keywords"
+                return
+            fi
+            handle_rename $2 $3
+        else
+            echo "alias not provided"
+        fi
         ;;
     "remove")
         if [ $2 ]; then
