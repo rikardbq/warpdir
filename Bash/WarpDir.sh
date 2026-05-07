@@ -112,7 +112,7 @@ fi
 if [ $1 ]; then
     case $1 in
     "help")
-        echo "help"
+        echo -e "Commands:\n\n\t<no argument> (will toggle between current and previous directory)\n\n\tlist\n\n\tsave [alias]\n\n\trename [alias new_alias]\n\n\tremove [alias]\n\n"
         ;;
     "save")
         if [ $2 ]; then
