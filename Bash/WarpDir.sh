@@ -17,6 +17,16 @@ get_wd_entries() {
     echo $(cat $WD_FULL_PATH)
 }
 
+get_wd_aliases() {
+    local aliases=()
+    for entry in $(get_wd_entries); do
+        local IFS="|"
+        read -ra split_entry <<< "$entry"
+        aliases+="${split_entry[0]} "
+    done
+    echo $aliases
+}
+
 find_entry_by_alias() {
     local val=""
     for entry in $(get_wd_entries); do
@@ -176,4 +186,8 @@ elif [ ${WD_PREV_PWD[1]} ]; then
     fi
 fi
 
-complete -W "$(join_list_on " " ${WD_COMMANDS[@]})" wd
+if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
+        complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases)" wd
+    fi
+fi
