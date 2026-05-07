@@ -77,7 +77,11 @@ handle_remove() {
                 fi
             done
             local IFS=" "
-            echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
+            if [ "$filtered_entries" ]; then
+                echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
+            else
+                echo -n "" > $WD_FULL_PATH
+            fi
             wd_prompted=0
         fi
     done
