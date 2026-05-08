@@ -111,8 +111,12 @@ handle_rename() {
     echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
 }
 
-if ! shopt -oq posix; then
-    if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-        complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases)" wd
+check_autocomplete() {
+    if ! shopt -oq posix; then
+        if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
+            complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases)" wd
+        fi
     fi
-fi
+}
+
+check_autocomplete

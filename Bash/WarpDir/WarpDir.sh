@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # WarpDir <3
-SELF_DIR="$(dirname ${BASH_SOURCE[0]})"
-. "$SELF_DIR/lib"
-
+if [ ! $WD_ROOT ]; then
+    echo "lib not sourced yet, sourcing it now (see README.md) for how to get rid of this message"
+    SELF_DIR="$(dirname ${BASH_SOURCE[0]})"
+    . "$SELF_DIR/lib"
+    return
+fi
 if [ ! -d "$HOME/$WD_ROOT" ]; then
     mkdir $HOME/$WD_ROOT
 fi
@@ -78,8 +81,4 @@ elif [ ${WD_PREV_PWD[1]} ]; then
     fi
 fi
 
-if ! shopt -oq posix; then
-    if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-        complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases)" wd
-    fi
-fi
+check_autocomplete
