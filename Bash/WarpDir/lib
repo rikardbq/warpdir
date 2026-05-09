@@ -64,7 +64,9 @@ goto_alias_target() {
     read -ra split_entry <<< "$entry"
     if [ "$entry" != "" ]; then
         local target=${split_entry[1]}
-        export WD_PREV_PWD=($PWD $target)
+        if [ "$PWD" != "$target" ]; then
+            export WD_PREV_PWD=($PWD $target)
+        fi
         cd $target
     fi
 }
