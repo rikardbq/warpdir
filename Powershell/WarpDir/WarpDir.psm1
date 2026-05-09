@@ -88,7 +88,7 @@ function wd {
     }
     if ($cmd1) {
         if ((Test-Path -Path $cmd1)) {
-            $WD_PREV_PWD[0] = $PWD
+            $WD_PREV_PWD[0] = $PWD.Path
             $WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
         } else {
@@ -106,8 +106,8 @@ function wd {
                     if (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
-                    $WD_PREV_PWD[0] = $PWD
-                    Write-Output "$cmd2|$PWD" >> $WD_FULL_PATH
+                    $WD_PREV_PWD[1] = $PWD.Path
+                    Write-Output "$cmd2|$($PWD.Path)" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
@@ -189,14 +189,17 @@ function wd {
                     if (-not $wd_entries_filtered) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
-                    $WD_PREV_PWD[0] = $PWD
-                    $WD_PREV_PWD[1] = $wd_entries_filtered.Split("|")[1]
-                    Set-Location $WD_PREV_PWD[1]
+                    $target = $wd_entries_filtered.Split("|")[1]
+                    if ($PWD.Path -ne $target) {
+                        $WD_PREV_PWD[0] = $PWD.Path
+                        $WD_PREV_PWD[1] = $target
+                    }
+                    Set-Location $target
                 }
             }
         }
     } elseif ($WD_PREV_PWD[1]) {
-        Set-Location $WD_PREV_PWD[($PWD.ToString() -eq $WD_PREV_PWD[0].ToString()) ? 1 : 0]
+        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[0]) ? 1 : 0]
     }
 }
 
