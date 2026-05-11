@@ -1,5 +1,5 @@
 # WarpDir <3
-$WD_PREV_PWD = ($null, $null)
+$WD_PREV_PWD = ($HOME, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
@@ -199,7 +199,7 @@ function wd {
             }
         }
     } elseif ($WD_PREV_PWD[1]) {
-        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[0]) ? 1 : 0]
+        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[1]) ? 0 : 1]
     }
 }
 
