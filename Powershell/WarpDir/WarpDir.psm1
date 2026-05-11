@@ -1,5 +1,5 @@
 # WarpDir <3
-$WD_PREV_PWD = ($HOME, $null)
+$WD_PREV_PWD = ($null, $HOME)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
@@ -106,7 +106,7 @@ function wd {
                     if (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
-                    $WD_PREV_PWD[1] = $PWD.Path
+                    $WD_PREV_PWD[0] = $PWD.Path
                     Write-Output "$cmd2|$($PWD.Path)" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
@@ -198,8 +198,8 @@ function wd {
                 }
             }
         }
-    } elseif ($WD_PREV_PWD[1]) {
-        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[1]) ? 0 : 1]
+    } elseif ($WD_PREV_PWD[0]) {
+        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[0]) ? 1 : 0]
     }
 }
 
