@@ -73,11 +73,11 @@ if [ $1 ]; then
         fi
         ;;
     esac
-elif [ ${WD_PREV_PWD[1]} ]; then
-    if [ $PWD == ${WD_PREV_PWD[1]} ]; then
-        cd ${WD_PREV_PWD[0]}
-    else
+elif [ ${WD_PREV_PWD[0]} ]; then
+    if [ $PWD == ${WD_PREV_PWD[0]} ]; then
         cd ${WD_PREV_PWD[1]}
+    else
+        cd ${WD_PREV_PWD[0]}
     fi
 fi
 

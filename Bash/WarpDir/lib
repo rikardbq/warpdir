@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export WD_PREV_PWD=("" "$HOME")
 WD_ROOT=".wd"
 WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
