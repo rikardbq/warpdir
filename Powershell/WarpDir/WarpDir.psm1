@@ -41,6 +41,9 @@ function generate_error {
         $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT {
             throw "missing flag argument, provide one of [$error_meta]"
         }
+        default {
+            throw "undefined error"
+        }
     }
 }
 
