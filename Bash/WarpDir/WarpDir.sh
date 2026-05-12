@@ -64,7 +64,7 @@ if [ $1 ]; then
         fi
         ;;
     "list")
-        echo -e "Alias|Target\n-----|------\n$(get_wd_entries)" | column -ts "|"
+        echo -e "\nAlias|Target\n-----|------\n$(get_wd_entries)\n" | column -L -ts "|"
         ;;
     *)
         if [ $(alias_exist $1) -eq 0 ]; then
