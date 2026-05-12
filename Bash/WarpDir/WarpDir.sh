@@ -4,8 +4,12 @@
 if [ ! $WD_ROOT ]; then
     echo "lib not sourced yet, sourcing it now (see README.md) for how to get rid of this message"
     SELF_DIR="$(dirname ${BASH_SOURCE[0]})"
-    . "$SELF_DIR/lib"
-    return
+    if [ ! -f "$SELF_DIR/lib" ]; then
+        echo "lib file not found!"
+        return
+    else
+        . "$SELF_DIR/lib"
+    fi
 fi
 if [ ! -d "$HOME/$WD_ROOT" ]; then
     mkdir $HOME/$WD_ROOT
@@ -22,44 +26,41 @@ if [ $1 ]; then
     "save")
         if [ $2 ]; then
             if [ $(alias_exist $2) -eq 1 ]; then
-                echo "alias already exist"
+                generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
             elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                echo "alias not allowed [$(join_list_on "," ${WD_COMMANDS[@]})] are reserved keywords"
+                generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
             else
                 export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
                 echo "$2|$PWD" >> $WD_FULL_PATH
             fi
         else
-            echo "alias not provided"
+            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
         fi
         ;;
     "rename")
         if [ $2 -a $3 ]; then
             if [ $(alias_exist $2) -eq 0 ]; then
-                echo "alias does not exist"
-                return
+                generate_error $ERROR_KIND__ALIAS_NOT_EXIST
             fi
             if [ $(alias_exist $3) -eq 1 ]; then
-                echo "alias already exist"
-                return
+                generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
             elif [ $(is_reserved_keyword $3) -eq 1 ]; then
-                echo "alias not allowed [$(join_list_on "," ${WD_COMMANDS[@]})] are reserved keywords"
-                return
+                generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
             fi
             handle_rename $2 $3
         else
-            echo "alias not provided"
+            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
         fi
         ;;
     "remove")
         if [ $2 ]; then
             if [ $(alias_exist $2) -eq 0 ]; then
-                echo "alias does not exist"
+                generate_error $ERROR_KIND__ALIAS_NOT_EXIST
             else
                 handle_remove $2
             fi
         else
-            echo "alias not provided"
+            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
         fi
         ;;
     "list")
@@ -67,7 +68,7 @@ if [ $1 ]; then
         ;;
     *)
         if [ $(alias_exist $1) -eq 0 ]; then
-            echo "alias does not exist"
+            generate_error $ERROR_KIND__ALIAS_NOT_EXIST
         else
             goto_alias_target $1
         fi

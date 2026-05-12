@@ -6,6 +6,33 @@ WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
 WD_COMMANDS=("help" "save" "rename" "remove" "list")
 
+ERROR_KIND__ALIAS_NOT_PROVIDED="ALIAS_NOT_PROVIDED"
+ERROR_KIND__ALIAS_NOT_EXIST="ALIAS_NOT_EXIST"
+ERROR_KIND__ALIAS_ALREADY_EXIST="ALIAS_ALREADY_EXIST"
+ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED="ALIAS_NOT_ALLOWED_KEYWORD_RESERVED"
+
+generate_error() {
+    case $1 in
+    $ERROR_KIND__ALIAS_NOT_PROVIDED)
+    echo "alias not provided"
+    ;;
+    $ERROR_KIND__ALIAS_NOT_EXIST)
+    echo "alias does not exist"
+    ;;
+    $ERROR_KIND__ALIAS_ALREADY_EXIST)
+    echo "alias already exist"
+    ;;
+    $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED)
+    echo "alias not allowed [$2] are reserved keywords"
+    ;;
+    *)
+    echo "undefined error"
+    ;;
+    esac
+
+    return
+}
+
 join_list_on() {
     local IFS=$1
     shift 1
