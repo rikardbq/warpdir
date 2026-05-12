@@ -12,24 +12,25 @@ ERROR_KIND__ALIAS_ALREADY_EXIST="ALIAS_ALREADY_EXIST"
 ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED="ALIAS_NOT_ALLOWED_KEYWORD_RESERVED"
 
 generate_error() {
+    local message=""
     case $1 in
     $ERROR_KIND__ALIAS_NOT_PROVIDED)
-    echo "alias not provided"
-    ;;
+        message="alias not provided"
+        ;;
     $ERROR_KIND__ALIAS_NOT_EXIST)
-    echo "alias does not exist"
-    ;;
+        message="alias does not exist"
+        ;;
     $ERROR_KIND__ALIAS_ALREADY_EXIST)
-    echo "alias already exist"
-    ;;
+        message="alias already exist"
+        ;;
     $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED)
-    echo "alias not allowed [$2] are reserved keywords"
-    ;;
+        message="alias not allowed [$2] are reserved keywords"
+        ;;
     *)
-    echo "undefined error"
-    ;;
+        message="undefined error"
+        ;;
     esac
-
+    echo $message 1>&2
     return
 }
 

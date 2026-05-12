@@ -38,7 +38,7 @@ if [ $1 ]; then
         fi
         ;;
     "rename")
-        if [ $2 -a $3 ]; then
+        if [ "$2" -a "$3" ]; then
             if [ $(alias_exist $2) -eq 0 ]; then
                 generate_error $ERROR_KIND__ALIAS_NOT_EXIST
             fi
