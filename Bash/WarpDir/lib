@@ -38,6 +38,7 @@ generate_error() {
         ;;
     esac
     echo $message 1>&2
+    return 1
 }
 
 join_list_on() {

@@ -30,55 +30,44 @@ if [ $1 ]; then
         "save")
             if [ $2 ]; then
                 if [ $(alias_exist $2) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST)
                 elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]})
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]}))
                 elif [ $(contains_bad_characters $2) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]})
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
                 else
                     export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
                     echo "$2|$PWD" >> $WD_FULL_PATH
                 fi
             else
-                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-                return
+                return $(generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED)
             fi
             ;;
         "rename")
             if [ "$2" -a "$3" ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_EXIST
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
                 elif [ $(alias_exist $3) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST)
                 elif [ $(is_reserved_keyword $3) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]})
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]}))
                 elif [ $(contains_bad_characters $3) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]})
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
                 fi
                 handle_rename $2 $3
             else
-                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-                return
+                return $(generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED)
             fi
             ;;
         "remove")
             if [ $2 ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_EXIST
-                    return
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
                 else
                     handle_remove $2
                 fi
             else
-                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-                return
+                return $(generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED)
             fi
             ;;
         "list")
@@ -86,8 +75,7 @@ if [ $1 ]; then
             ;;
         *)
             if [ $(alias_exist $1) -eq 0 ]; then
-                generate_error $ERROR_KIND__ALIAS_NOT_EXIST
-                return
+                return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
             else
                 goto_alias_target $1
             fi
