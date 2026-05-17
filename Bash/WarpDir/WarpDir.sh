@@ -71,7 +71,11 @@ if [ $1 ]; then
             fi
             ;;
         "list")
-            echo -e "\nAlias|Target\n-----|------\n$(get_wd_entries)\n" | column -L -ts "|"
+            entries_table=$(handle_list $2 $3)
+            if [ ! "$entries_table" ]; then
+                return $(generate_error $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT $(join_list_on " " ${SORT_FLAGS[@]}))
+            fi
+            echo -e "$entries_table" | column -L -ts "|"
             ;;
         *)
             if [ $(alias_exist $1) -eq 0 ]; then

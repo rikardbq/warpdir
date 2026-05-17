@@ -6,12 +6,15 @@ WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
 WD_COMMANDS=("help" "save" "rename" "remove" "list")
 
-BAD_CHARACTERS=("." '/')
+SORT_FLAGS=("alias" "target")
+BAD_CHARACTERS=("." "/")
+
 ERROR_KIND__ALIAS_NOT_PROVIDED="ALIAS_NOT_PROVIDED"
 ERROR_KIND__ALIAS_NOT_EXIST="ALIAS_NOT_EXIST"
 ERROR_KIND__ALIAS_ALREADY_EXIST="ALIAS_ALREADY_EXIST"
 ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED="ALIAS_NOT_ALLOWED_KEYWORD_RESERVED"
 ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED="ALIAS_NOT_ALLOWED_NAME_MALFORMED"
+ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT="FLAG_SORT_MISSING_ARGUMENT"
 
 generate_error() {
     local message=""
@@ -32,6 +35,10 @@ generate_error() {
     $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED)
         shift 1
         message="alias not allowed, characters [ $* ] may not be in the name"
+        ;;
+    $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT)
+        shift 1
+        message="missing flag argument, provide one of [ $* ]"
         ;;
     *)
         message="undefined error"
@@ -158,6 +165,25 @@ handle_rename() {
     done
     local IFS=" "
     echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
+}
+
+handle_list() {
+    local table_header="Alias|Target\n-----|------\n"
+    local raw_table="$table_header$(get_wd_entries)"
+    if [ "$1" == "--sort" ]; then
+        case $2 in
+        "alias")
+            echo -e "$raw_table" | awk 'NR==1{print; next} NR==2{print; next} {print | "sort -t \"|\" -k 1"}'
+            ;;
+        "target")
+            echo -e "$raw_table" | awk 'NR==1{print; next} NR==2{print; next} {print | "sort -t \"|\" -k 2"}'
+            ;;
+        "*")
+            echo ""
+        esac
+    else
+        echo -e "$raw_table"
+    fi
 }
 
 check_autocomplete() {
