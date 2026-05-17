@@ -6,10 +6,12 @@ WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
 WD_COMMANDS=("help" "save" "rename" "remove" "list")
 
+BAD_CHARACTERS=("." '/')
 ERROR_KIND__ALIAS_NOT_PROVIDED="ALIAS_NOT_PROVIDED"
 ERROR_KIND__ALIAS_NOT_EXIST="ALIAS_NOT_EXIST"
 ERROR_KIND__ALIAS_ALREADY_EXIST="ALIAS_ALREADY_EXIST"
 ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED="ALIAS_NOT_ALLOWED_KEYWORD_RESERVED"
+ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED="ALIAS_NOT_ALLOWED_NAME_MALFORMED"
 
 generate_error() {
     local message=""
@@ -24,14 +26,18 @@ generate_error() {
         message="alias already exist"
         ;;
     $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED)
-        message="alias not allowed [$2] are reserved keywords"
+        shift 1
+        message="alias not allowed, keywords [ $* ] are reserved"
+        ;;
+    $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED)
+        shift 1
+        message="alias not allowed, characters [ $* ] may not be in the name"
         ;;
     *)
         message="undefined error"
         ;;
     esac
     echo $message 1>&2
-    return
 }
 
 join_list_on() {
@@ -75,6 +81,17 @@ alias_exist() {
     else
         echo 0
     fi
+}
+
+contains_bad_characters() {
+    local is_bad=0
+    for c in ${BAD_CHARACTERS[@]}; do
+        if [[ "$1" =~ .*"$c".* ]]; then
+            is_bad=1
+            break;
+        fi
+    done
+    echo $is_bad
 }
 
 is_reserved_keyword() {

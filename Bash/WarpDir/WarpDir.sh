@@ -19,7 +19,7 @@ if [ ! -f "$WD_FULL_PATH" ]; then
 fi
 
 if [ $1 ]; then
-    if [ -d "$1" ]; then
+    if [[ "$1" =~ "/".* || "$1" =~ .*"./".* || "$1" == ".." ]]; then
         WD_PREV_PWD=($PWD $1)
         cd $1
     else
@@ -31,40 +31,52 @@ if [ $1 ]; then
             if [ $2 ]; then
                 if [ $(alias_exist $2) -eq 1 ]; then
                     generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
+                    return
                 elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]})
+                    return
+                elif [ $(contains_bad_characters $2) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]})
+                    return
                 else
                     export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
                     echo "$2|$PWD" >> $WD_FULL_PATH
                 fi
             else
                 generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
+                return
             fi
             ;;
         "rename")
             if [ "$2" -a "$3" ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
                     generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+                    return
                 fi
                 if [ $(alias_exist $3) -eq 1 ]; then
                     generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
+                    return
                 elif [ $(is_reserved_keyword $3) -eq 1 ]; then
-                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]})
+                    return
                 fi
                 handle_rename $2 $3
             else
                 generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
+                return
             fi
             ;;
         "remove")
             if [ $2 ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
                     generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+                    return
                 else
                     handle_remove $2
                 fi
             else
                 generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
+                return
             fi
             ;;
         "list")
@@ -73,6 +85,7 @@ if [ $1 ]; then
         *)
             if [ $(alias_exist $1) -eq 0 ]; then
                 generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+                return
             else
                 goto_alias_target $1
             fi
