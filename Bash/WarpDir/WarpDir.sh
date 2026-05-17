@@ -52,12 +52,14 @@ if [ $1 ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
                     generate_error $ERROR_KIND__ALIAS_NOT_EXIST
                     return
-                fi
-                if [ $(alias_exist $3) -eq 1 ]; then
+                elif [ $(alias_exist $3) -eq 1 ]; then
                     generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
                     return
                 elif [ $(is_reserved_keyword $3) -eq 1 ]; then
                     generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]})
+                    return
+                elif [ $(contains_bad_characters $3) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]})
                     return
                 fi
                 handle_rename $2 $3
