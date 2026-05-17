@@ -19,61 +19,66 @@ if [ ! -f "$WD_FULL_PATH" ]; then
 fi
 
 if [ $1 ]; then
-    case $1 in
-    "help")
-        echo -e "Commands:\n\n\t<no argument> (will toggle between current and previous directory)\n\n\tlist\n\n\tsave [alias]\n\n\trename [alias new_alias]\n\n\tremove [alias]\n\n"
-        ;;
-    "save")
-        if [ $2 ]; then
-            if [ $(alias_exist $2) -eq 1 ]; then
-                generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
-            elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+    if [ -d "$1" ]; then
+        WD_PREV_PWD=($PWD $1)
+        cd $1
+    else
+        case $1 in
+        "help")
+            echo -e "Commands:\n\n\t<no argument> (will toggle between current and previous directory)\n\n\tlist\n\n\tsave [alias]\n\n\trename [alias new_alias]\n\n\tremove [alias]\n\n"
+            ;;
+        "save")
+            if [ $2 ]; then
+                if [ $(alias_exist $2) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
+                elif [ $(is_reserved_keyword $2) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+                else
+                    export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
+                    echo "$2|$PWD" >> $WD_FULL_PATH
+                fi
             else
-                export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
-                echo "$2|$PWD" >> $WD_FULL_PATH
+                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
             fi
-        else
-            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-        fi
-        ;;
-    "rename")
-        if [ "$2" -a "$3" ]; then
-            if [ $(alias_exist $2) -eq 0 ]; then
-                generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+            ;;
+        "rename")
+            if [ "$2" -a "$3" ]; then
+                if [ $(alias_exist $2) -eq 0 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+                fi
+                if [ $(alias_exist $3) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
+                elif [ $(is_reserved_keyword $3) -eq 1 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+                fi
+                handle_rename $2 $3
+            else
+                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
             fi
-            if [ $(alias_exist $3) -eq 1 ]; then
-                generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST
-            elif [ $(is_reserved_keyword $3) -eq 1 ]; then
-                generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on "," ${WD_COMMANDS[@]})
+            ;;
+        "remove")
+            if [ $2 ]; then
+                if [ $(alias_exist $2) -eq 0 ]; then
+                    generate_error $ERROR_KIND__ALIAS_NOT_EXIST
+                else
+                    handle_remove $2
+                fi
+            else
+                generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
             fi
-            handle_rename $2 $3
-        else
-            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-        fi
-        ;;
-    "remove")
-        if [ $2 ]; then
-            if [ $(alias_exist $2) -eq 0 ]; then
+            ;;
+        "list")
+            echo -e "\nAlias|Target\n-----|------\n$(get_wd_entries)\n" | column -L -ts "|"
+            ;;
+        *)
+            if [ $(alias_exist $1) -eq 0 ]; then
                 generate_error $ERROR_KIND__ALIAS_NOT_EXIST
             else
-                handle_remove $2
+                goto_alias_target $1
             fi
-        else
-            generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED
-        fi
-        ;;
-    "list")
-        echo -e "\nAlias|Target\n-----|------\n$(get_wd_entries)\n" | column -L -ts "|"
-        ;;
-    *)
-        if [ $(alias_exist $1) -eq 0 ]; then
-            generate_error $ERROR_KIND__ALIAS_NOT_EXIST
-        else
-            goto_alias_target $1
-        fi
-        ;;
-    esac
+            ;;
+        esac
+    fi
 elif [ ${WD_PREV_PWD[0]} ]; then
     if [ $PWD == ${WD_PREV_PWD[0]} ]; then
         cd ${WD_PREV_PWD[1]}

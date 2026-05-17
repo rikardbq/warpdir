@@ -145,7 +145,7 @@ handle_rename() {
 check_autocomplete() {
     if ! shopt -oq posix; then
         if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-            complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases)" wd
+            complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases) $(find . -maxdepth 1 -type d)" wd
         fi
     fi
 }
