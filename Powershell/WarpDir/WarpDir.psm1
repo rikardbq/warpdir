@@ -208,14 +208,16 @@ function wd {
 
 Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $completions = $WD_CMDS.Values + (get_wd_entries) | ForEach-Object {
+    $completions = ($WD_CMDS.Values + ((get_wd_entries) | ForEach-Object {
         $cmd_split = $_.Split("|")
         if ($cmd_split.Count -eq 1) {
             $cmd_split
         } else {
             $cmd_split[0]
         }
-    }
+    }) + ((Get-ChildItem -Directory).Name | ForEach-Object {
+        "./$_"
+    })) | Sort-Object
     $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
     }
