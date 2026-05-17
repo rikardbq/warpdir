@@ -10,11 +10,13 @@ $WD_CMDS = @{
     REMOVE = "remove";
     LIST = "list";
 }
+$WD_BAD_CHARACTERS = @(".", "/")
 $WD_ERROR_KIND = @{
     ALIAS_NOT_PROVIDED = "NOT_PROVIDED";
     ALIAS_NOT_EXIST = "NOT_EXIST";
     ALIAS_ALREADY_EXIST = "ALREADY_EXIST";
     ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "NOT_ALLOWED_KEYWORD_RESERVED";
+    ALIAS_NOT_ALLOWED_NAME_MALFORMED="ALIAS_NOT_ALLOWED_NAME_MALFORMED"
     FLAG_SORT_MISSING_ARGUMENT = "MISSING_ARGUMENT";
 }
 
@@ -36,10 +38,13 @@ function generate_error {
             throw "alias already exist"
         }
         $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED {
-            throw "alias not allowed [$error_meta] are reserved keywords"
+            throw "alias not allowed, keywords [ $error_meta ] are reserved"
+        }
+        $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED {
+            throw "alias not allowed, characters [ $error_meta ] may not be in the name"
         }
         $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT {
-            throw "missing flag argument, provide one of [$error_meta]"
+            throw "missing flag argument, provide one of [ $error_meta ]"
         }
         default {
             throw "undefined error"
@@ -74,6 +79,19 @@ function print_remove_prompt {
     Read-Host "are you sure you want to remove alias [ $alias ]? (N/y)"
 }
 
+function contains_bad_characters {
+    param (
+        [Parameter(Mandatory = $true)]
+        $alias
+    )
+    foreach ($c in $WD_BAD_CHARACTERS) {
+        if ($alias.Contains($c)) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function wd {
     param (
         [Parameter(Mandatory = $false)]
@@ -90,7 +108,7 @@ function wd {
         New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
-        if ((Test-Path -Path $cmd1)) {
+        if (((Test-Path -Path $cmd1) -and ($cmd1 -like "/*" -or $cmd1 -like "\*" -or $cmd1 -like "*./*" -or $cmd1 -like "*.\*" -or $cmd1 -eq "..")) -or [System.IO.Path]::IsPathFullyQualified($cmd1)) {
             $WD_PREV_PWD[0] = $PWD.Path
             $WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
@@ -102,11 +120,11 @@ function wd {
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
-                    }
-                    if ($WD_CMDS.Values -contains $cmd2) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join ", ")
-                    }
-                    if (alias_exists $cmd2) {
+                    } elseif ($WD_CMDS.Values -contains $cmd2) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
+                    } elseif (contains_bad_characters $cmd2) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
+                    } elseif (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     $WD_PREV_PWD[0] = $PWD.Path
@@ -115,15 +133,14 @@ function wd {
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
-                    }
-                    if (-not (alias_exists $cmd2)) {
+                    } elseif (-not (alias_exists $cmd2)) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
-                    }
-                    if (alias_exists $cmd3) {
+                    } elseif (alias_exists $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
-                    }
-                    if ($WD_CMDS.Values -contains $cmd3) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join ", ")
+                    } elseif ($WD_CMDS.Values -contains $cmd3) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
+                    } elseif (contains_bad_characters $cmd3) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
