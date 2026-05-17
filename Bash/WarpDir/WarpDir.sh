@@ -5,8 +5,8 @@ if [ ! $WD_ROOT ]; then
     echo "lib not sourced yet, sourcing it now (see README.md) for how to get rid of this message"
     SELF_DIR="$(dirname ${BASH_SOURCE[0]})"
     if [ ! -f "$SELF_DIR/lib" ]; then
-        echo "lib file not found!"
-        return
+        echo "lib file not found!" 1>&2
+        return 1
     else
         . "$SELF_DIR/lib"
     fi
