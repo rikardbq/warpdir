@@ -19,6 +19,9 @@ With that said please use with care. See **[LICENSE](LICENSE.txt)**
 **Saving current directory as an alias**\
 `$ wd save dev`
 
+**Warping to the saved alias**\
+`$ wd dev`
+
 **Listing all aliases and their targets**\
 `$ wd list`\
 optional sort flag, can sort on alias and target\
