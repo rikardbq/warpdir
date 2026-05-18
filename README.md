@@ -4,7 +4,7 @@
 Made to make moving between long path names easier by saving "_WarpDirs_".
 
 Originally inspired by a tool called WarpDrive which functions in a similar way, but I decided it would be more fun to hack something of my own.\
-With that said please use with care. See **[LICENSE](LICENSE.txt)** 
+With that said please use with care. See **[LICENSE](LICENSE.txt)**
 
 ## Usage
 **Can be used instead of _cd_ if the path is a directory**\
