@@ -114,7 +114,7 @@ function wd {
         New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
-        if (((Test-Path -Path $cmd1) -and ($cmd1 -like "/*" -or $cmd1 -like "\*" -or $cmd1 -like "*./*" -or $cmd1 -like "*.\*" -or $cmd1 -eq "..")) -or [System.IO.Path]::IsPathFullyQualified($cmd1)) {
+        if (((Test-Path -Path $cmd1) -and ($cmd1 -like "~/*" -or $cmd1 -like "~\*" -or $cmd1 -like "./*" -or $cmd1 -like ".\*" -or $cmd1 -eq "..")) -or [System.IO.Path]::IsPathFullyQualified($cmd1)) {
             $WD_PREV_PWD[0] = $PWD.Path
             $WD_PREV_PWD[1] = $cmd1
             Set-Location $cmd1
