@@ -25,7 +25,7 @@ if [ $1 ]; then
             WD_PREV_PWD=($PWD $(realpath $1))
             cd $1
         else
-            echo "no such directory: $real_path" 1>&2
+            echo "no such directory: $1" 1>&2
             return 1
         fi
     else
@@ -42,7 +42,7 @@ if [ $1 ]; then
                 elif [ $(contains_bad_characters $2) -eq 1 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
                 else
-                    WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
+                    WD_PREV_PWD=(${WD_PREV_PWD[0]} $PWD)
                     echo "$2|$PWD" >> $WD_FULL_PATH
                 fi
             else
@@ -94,11 +94,11 @@ if [ $1 ]; then
             ;;
         esac
     fi
-elif [ ${WD_PREV_PWD[0]} ]; then
-    if [ "$PWD" == "${WD_PREV_PWD[0]}" ]; then
-        cd ${WD_PREV_PWD[1]}
-    else
+elif [ ${WD_PREV_PWD[1]} ]; then
+    if [ "$PWD" == "${WD_PREV_PWD[1]}" ]; then
         cd ${WD_PREV_PWD[0]}
+    else
+        cd ${WD_PREV_PWD[1]}
     fi
 fi
 
