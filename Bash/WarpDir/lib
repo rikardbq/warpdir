@@ -62,27 +62,31 @@ join_list_on() {
 }
 
 get_wd_entries() {
-    cat $WD_FULL_PATH
+    local entries=""
+    while read -r "entry"; do
+        entries+="$entry "
+    done <<< $WD_FULL_PATH
+    echo $entries
 }
 
 get_wd_aliases() {
     local aliases=""
-    while read -r entry; do
+    for entry in $(get_wd_entries); do
         local alias=$(echo "$entry" | cut -d "|" -f1)
         aliases+="$alias "
-    done <<< $(get_wd_entries)
+    done
     echo $aliases
 }
 
 find_entry_by_alias() {
     local val=""
-    while read -r entry; do
+    for entry in $(get_wd_entries); do
         local alias=$(echo "$entry" | cut -d "|" -f1)
         if [ "$1" == "$alias" ]; then
             val=$entry
             break
         fi
-    done <<< $(get_wd_entries)
+    done
     echo $val
 }
 
@@ -140,12 +144,12 @@ handle_remove() {
             echo "nothing changed"
             wd_prompted=0
         elif [ "$user_input" == "y" -o "$user_input" == "Y" ]; then
-            while read -r "entry"; do
+            for entry in $(get_wd_entries); do
                 local alias=$(echo "$entry" | cut -d "|" -f1)
                 if [ "$1" != "$alias" ]; then
                     filtered_entries+="$entry "
                 fi
-            done <<< $(get_wd_entries)
+            done
             if [ "$filtered_entries" ]; then
                 local IFS=" "
                 echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
@@ -159,7 +163,7 @@ handle_remove() {
 
 handle_rename() {
     local filtered_entries=""
-    while read -r "entry"; do
+    for entry in $(get_wd_entries); do
         local alias=$(echo "$entry" | cut -d "|" -f1)
         local target=$(echo "$entry" | cut -d "|" -f2)
         if [ "$1" == "$alias" ]; then
@@ -167,14 +171,14 @@ handle_rename() {
         else
             filtered_entries+="$entry "
         fi
-    done <<< $(get_wd_entries)
+    done
     local IFS=" "
     echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
 }
 
 handle_list() {
     local table_header="Alias|Target\n-----|------\n"
-    local raw_table="$table_header$(get_wd_entries)"
+    local raw_table="$table_header$(cat $WD_FULL_PATH)"
     if [ $1 ]; then
         if [ "$1" == "--sort" ]; then
             case $2 in
