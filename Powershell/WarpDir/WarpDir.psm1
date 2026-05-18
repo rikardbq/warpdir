@@ -12,7 +12,7 @@ $WD_CMDS = @{
 }
 $WD_LIST_FLAGS = @("--sort")
 $WD_SORT_ARGS = @("alias", "target")
-$WD_BAD_CHARACTERS = @(".", "/")
+$WD_BAD_CHARACTERS = @(".", "/", "~", "\")
 $WD_ERROR_KIND = @{
     ALIAS_NOT_PROVIDED = "NOT_PROVIDED";
     ALIAS_NOT_EXIST = "NOT_EXIST";
