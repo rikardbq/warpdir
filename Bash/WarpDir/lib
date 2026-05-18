@@ -125,7 +125,7 @@ goto_alias_target() {
     if [ "$entry" != "" ]; then
         local target=${split_entry[1]}
         if [ "$PWD" != "$target" ]; then
-            export WD_PREV_PWD=($PWD $target)
+            WD_PREV_PWD=($PWD $target)
         fi
         cd $target
     fi
