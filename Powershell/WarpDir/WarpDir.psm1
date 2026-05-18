@@ -115,7 +115,7 @@ function wd {
         } else {
             switch ($cmd1) {
                 $WD_CMDS.HELP {
-                    Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [alias, target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
+                    Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [alias|target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
                 }
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
