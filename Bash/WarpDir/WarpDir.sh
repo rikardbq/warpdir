@@ -20,7 +20,7 @@ fi
 
 if [ $1 ]; then
     if [[ "$1" =~ "/".* || "$1" =~ .*"./".* || "$1" == ".." ]]; then
-        WD_PREV_PWD=($PWD $1)
+        WD_PREV_PWD=($PWD $(realpath $1))
         cd $1
     else
         case $1 in
@@ -36,7 +36,7 @@ if [ $1 ]; then
                 elif [ $(contains_bad_characters $2) -eq 1 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
                 else
-                    export WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
+                    WD_PREV_PWD=($PWD ${WD_PREV_PWD[1]})
                     echo "$2|$PWD" >> $WD_FULL_PATH
                 fi
             else
@@ -89,7 +89,7 @@ if [ $1 ]; then
         esac
     fi
 elif [ ${WD_PREV_PWD[0]} ]; then
-    if [ $PWD == ${WD_PREV_PWD[0]} ]; then
+    if [ "$PWD" == "${WD_PREV_PWD[0]}" ]; then
         cd ${WD_PREV_PWD[1]}
     else
         cd ${WD_PREV_PWD[0]}
