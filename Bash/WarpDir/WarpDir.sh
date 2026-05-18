@@ -19,7 +19,7 @@ if [ ! -f "$WD_FULL_PATH" ]; then
 fi
 
 if [ $1 ]; then
-    if [[ "$1" =~ "/".* || "$1" =~ .*"./".* || "$1" == ".." ]]; then
+    if [[ "$1" =~ "/".* || "$1" =~ "./".* || "$1" == ".." ]]; then
         WD_PREV_PWD=($PWD $(realpath $1))
         cd $1
     else
