@@ -101,5 +101,3 @@ elif [ ${WD_PREV_PWD[1]} ]; then
         cd ${WD_PREV_PWD[1]}
     fi
 fi
-
-check_autocomplete
