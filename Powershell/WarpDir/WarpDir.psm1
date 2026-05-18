@@ -101,12 +101,16 @@ function contains_bad_characters {
     return $false
 }
 
-function is_path_fully_qualified {
+function is_qualified_path {
     param (
         [Parameter(Mandatory = $true)]
         $path
     )
-    return [System.IO.Path]::IsPathRooted($path) -and ($path -match "^[a-zA-Z]:[\\/]" -or $path -match "^\\\\")
+    return $path -eq ".." -or 
+        $path -match "^[~.][/\\]" -or 
+        $path -match "^[a-zA-Z]:[/\\]" -or 
+        $path -match "^\\\\" -or 
+        $path -match "^[/\\]"
 }
 
 function wd {
@@ -125,7 +129,7 @@ function wd {
         New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
-        if ($cmd1 -like "~/*" -or $cmd1 -like "~\*" -or $cmd1 -like "./*" -or $cmd1 -like ".\*" -or $cmd1 -eq ".." -or (is_path_fully_qualified $cmd1)) {
+        if (is_qualified_path $cmd1) {
             if (Test-Path -Path $cmd1) {
                 $real_path = (Resolve-Path $cmd1).Path.TrimEnd("\")
                 $WD_PREV_PWD[0] = $PWD.Path
