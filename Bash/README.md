@@ -10,4 +10,12 @@ Any config will be located at `$HOME/.wd/`
 
 Because cd ( change directory ) doesn't work inside a script in the sense that you won't change you current shell's directory, the only way to run this program is to source it, which is why the alias refers to a sourcing of the script and not executing it per se.
 
+Works on Bash 3.2+ and depends on:
+- cat
+- cut
+- awk
+- sort
+- column
+- realpath
+
 See **[/README.md](/README.md)** for usage instructions.

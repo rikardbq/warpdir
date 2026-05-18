@@ -3,7 +3,7 @@
 # WarpDir <3
 if [ ! $WD_ROOT ]; then
     echo "lib not sourced yet, sourcing it now (see README.md) for how to get rid of this message"
-    SELF_DIR="$(dirname ${BASH_SOURCE[0]})"
+    SELF_DIR="$(dirname $BASH_SOURCE)"
     if [ ! -f "$SELF_DIR/lib" ]; then
         echo "lib file not found!" 1>&2
         return 1
@@ -12,9 +12,9 @@ if [ ! $WD_ROOT ]; then
     fi
 fi
 if [ ! -d "$HOME/$WD_ROOT" ]; then
-    mkdir $HOME/$WD_ROOT
+    mkdir "$HOME/$WD_ROOT"
 fi
-if [ ! -f "$WD_FULL_PATH" ]; then
+if [ ! -f $WD_FULL_PATH ]; then
     touch $WD_FULL_PATH
 fi
 
@@ -22,7 +22,8 @@ if [ $1 ]; then
     if [[ "$1" =~ "/".* || "$1" =~ "./".* || "$1" == ".." ]]; then
         real_path=$(realpath $1)
         if [ -d $real_path ]; then
-            WD_PREV_PWD=($PWD $real_path)
+            WD_PREV_PWD_OLD="$PWD"
+            WD_PREV_PWD_NEW="$real_path"
             cd $1
         else
             echo "no such directory: $1" 1>&2
@@ -38,11 +39,11 @@ if [ $1 ]; then
                 if [ $(alias_exist $2) -eq 1 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST)
                 elif [ $(is_reserved_keyword $2) -eq 1 ]; then
-                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]}))
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $WD_COMMANDS)
                 elif [ $(contains_bad_characters $2) -eq 1 ]; then
-                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $BAD_CHARACTERS)
                 else
-                    WD_PREV_PWD=(${WD_PREV_PWD[0]} $PWD)
+                    WD_PREV_PWD_NEW="$PWD"
                     echo "$2|$PWD" >> $WD_FULL_PATH
                 fi
             else
@@ -50,15 +51,15 @@ if [ $1 ]; then
             fi
             ;;
         "rename")
-            if [ "$2" -a "$3" ]; then
+            if [ $2 -a $3 ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
                 elif [ $(alias_exist $3) -eq 1 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_ALREADY_EXIST)
                 elif [ $(is_reserved_keyword $3) -eq 1 ]; then
-                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $(join_list_on " " ${WD_COMMANDS[@]}))
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $WD_COMMANDS)
                 elif [ $(contains_bad_characters $3) -eq 1 ]; then
-                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $(join_list_on " " ${BAD_CHARACTERS[@]}))
+                    return $(generate_error $ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED $BAD_CHARACTERS)
                 fi
                 handle_rename $2 $3
             else
@@ -79,9 +80,9 @@ if [ $1 ]; then
         "list")
             entries_table=$(handle_list $2 $3)
             if [ "$entries_table" == "E_FLAG" ]; then
-                return $(generate_error $ERROR_KIND__COMMAND_FLAG_NOT_SUPPORTED $(join_list_on " " ${LIST_FLAGS[@]}))
+                return $(generate_error $ERROR_KIND__COMMAND_FLAG_NOT_SUPPORTED $LIST_FLAGS)
             elif [ "$entries_table" == "E_ARG" ]; then
-                return $(generate_error $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT $(join_list_on " " ${SORT_ARGS[@]}))
+                return $(generate_error $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT $SORT_ARGS)
             fi
             echo -e "\n$entries_table\n" | column -L -ts "|"
             ;;
@@ -94,10 +95,10 @@ if [ $1 ]; then
             ;;
         esac
     fi
-elif [ ${WD_PREV_PWD[1]} ]; then
-    if [ "$PWD" == "${WD_PREV_PWD[1]}" ]; then
-        cd ${WD_PREV_PWD[0]}
+elif [ $WD_PREV_PWD_NEW ]; then
+    if [ "$PWD" == "$WD_PREV_PWD_NEW" ]; then
+        cd $WD_PREV_PWD_OLD
     else
-        cd ${WD_PREV_PWD[1]}
+        cd $WD_PREV_PWD_NEW
     fi
 fi

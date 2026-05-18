@@ -1,14 +1,15 @@
 #!/bin/bash
 
-WD_PREV_PWD=("$HOME" "")
+WD_PREV_PWD_OLD="$HOME"
+WD_PREV_PWD_NEW=""
 WD_ROOT=".wd"
 WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
-WD_COMMANDS=("help" "save" "rename" "remove" "list")
+WD_COMMANDS="help save rename remove list"
 
-LIST_FLAGS=("--sort")
-SORT_ARGS=("alias" "target")
-BAD_CHARACTERS=("." "/" "~" "\\")
+LIST_FLAGS="--sort"
+SORT_ARGS="alias target"
+BAD_CHARACTERS=". / ~ \\"
 
 ERROR_KIND__ALIAS_NOT_PROVIDED="ALIAS_NOT_PROVIDED"
 ERROR_KIND__ALIAS_NOT_EXIST="ALIAS_NOT_EXIST"
@@ -61,30 +62,27 @@ join_list_on() {
 }
 
 get_wd_entries() {
-    local IFS=" "
-    echo $(cat $WD_FULL_PATH)
+    cat $WD_FULL_PATH
 }
 
 get_wd_aliases() {
-    local aliases=()
-    for entry in $(get_wd_entries); do
-        local IFS="|"
-        read -ra split_entry <<< "$entry"
-        aliases+="${split_entry[0]} "
-    done
+    local aliases=""
+    while read -r entry; do
+        local alias=$(echo "$entry" | cut -d "|" -f1)
+        aliases+="$alias "
+    done <<< $(get_wd_entries)
     echo $aliases
 }
 
 find_entry_by_alias() {
     local val=""
-    for entry in $(get_wd_entries); do
-        local IFS="|"
-        read -ra split_entry <<< "$entry"
-        if [ "$1" == "${split_entry[0]}" ]; then
+    while read -r entry; do
+        local alias=$(echo "$entry" | cut -d "|" -f1)
+        if [ "$1" == "$alias" ]; then
             val=$entry
-            break;
+            break
         fi
-    done
+    done <<< $(get_wd_entries)
     echo $val
 }
 
@@ -99,21 +97,23 @@ alias_exist() {
 
 contains_bad_characters() {
     local is_bad=0
-    for c in ${BAD_CHARACTERS[@]}; do
-        if [[ "$1" =~ .*"$c".* ]]; then
-            is_bad=1
-            break;
-        fi
+    for c in $BAD_CHARACTERS; do
+        case $1 in
+            *$c*)
+                is_bad=1
+                break
+                ;;
+        esac
     done
     echo $is_bad
 }
 
 is_reserved_keyword() {
     local reserved=0
-    for cmd in ${WD_COMMANDS[@]}; do
+    for cmd in $WD_COMMANDS; do
         if [ "$1" == "$cmd" ]; then
             reserved=1
-            break;
+            break
         fi
     done
     echo $reserved
@@ -121,11 +121,11 @@ is_reserved_keyword() {
 
 goto_alias_target() {
     local entry=$(find_entry_by_alias $1)
-    read -ra split_entry <<< "$entry"
     if [ "$entry" != "" ]; then
-        local target=${split_entry[1]}
+        local target=$(echo "$entry" | cut -d "|" -f2)
         if [ "$PWD" != "$target" ]; then
-            WD_PREV_PWD=($PWD $target)
+            WD_PREV_PWD_OLD="$PWD"
+            WD_PREV_PWD_NEW="$target"
         fi
         cd $target
     fi
@@ -133,22 +133,21 @@ goto_alias_target() {
 
 handle_remove() {
     local wd_prompted=1
-    local filtered_entries=()
+    local filtered_entries=""
     while [ $wd_prompted -eq 1 ]; do
         read -p "are you sure you want to remove alias [ $1 ]? (N/y) " user_input
-        if [ "$user_input" == "" -o "${user_input,,}" == "n" ]; then
+        if [ "$user_input" == "" -o "$user_input" == "n" -o "$user_input" == "N" ]; then
             echo "nothing changed"
             wd_prompted=0
-        elif [ "${user_input,,}" == "y" ]; then
-            for entry in $(get_wd_entries); do
-                local IFS="|"
-                read -ra split_entry <<< "$entry"
-                if [ "$1" != "${split_entry[0]}" ]; then
+        elif [ "$user_input" == "y" -o "$user_input" == "Y" ]; then
+            while read -r "entry"; do
+                local alias=$(echo "$entry" | cut -d "|" -f1)
+                if [ "$1" != "$alias" ]; then
                     filtered_entries+="$entry "
                 fi
-            done
-            local IFS=" "
+            done <<< $(get_wd_entries)
             if [ "$filtered_entries" ]; then
+                local IFS=" "
                 echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
             else
                 echo -n "" > $WD_FULL_PATH
@@ -159,16 +158,16 @@ handle_remove() {
 }
 
 handle_rename() {
-    local filtered_entries=()
-    for entry in $(get_wd_entries); do
-        local IFS="|"
-        read -ra split_entry <<< "$entry"
-        if [ "$1" == "${split_entry[0]}" ]; then
-            filtered_entries+="$2|${split_entry[1]} "
+    local filtered_entries=""
+    while read -r "entry"; do
+        local alias=$(echo "$entry" | cut -d "|" -f1)
+        local target=$(echo "$entry" | cut -d "|" -f2)
+        if [ "$1" == "$alias" ]; then
+            filtered_entries+="$2|$target "
         else
             filtered_entries+="$entry "
         fi
-    done
+    done <<< $(get_wd_entries)
     local IFS=" "
     echo $(join_list_on $'\n' $filtered_entries) > $WD_FULL_PATH
 }
@@ -200,7 +199,7 @@ handle_list() {
 check_autocomplete() {
     if ! shopt -oq posix; then
         if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-            complete -W "$(join_list_on " " ${WD_COMMANDS[@]}) $(get_wd_aliases) $(find . -maxdepth 1 -type d)" wd
+            complete -W "$WD_COMMANDS $(get_wd_aliases) .. $(find . -maxdepth 1 -type d)" wd
         fi
     fi
 }
