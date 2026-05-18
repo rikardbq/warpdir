@@ -1,5 +1,5 @@
 # WarpDir <3
-$WD_PREV_PWD = ($null, $HOME)
+$WD_PREV_PWD = ($HOME, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
@@ -114,10 +114,15 @@ function wd {
         New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
-        if (((Test-Path -Path $cmd1) -and ($cmd1 -like "~/*" -or $cmd1 -like "~\*" -or $cmd1 -like "./*" -or $cmd1 -like ".\*" -or $cmd1 -eq "..")) -or [System.IO.Path]::IsPathFullyQualified($cmd1)) {
-            $WD_PREV_PWD[0] = $PWD.Path
-            $WD_PREV_PWD[1] = $cmd1
-            Set-Location $cmd1
+        if ($cmd1 -like "~/*" -or $cmd1 -like "~\*" -or $cmd1 -like "./*" -or $cmd1 -like ".\*" -or $cmd1 -eq ".." -or [System.IO.Path]::IsPathFullyQualified($cmd1)) {
+            if (Test-Path -Path $cmd1) {
+                $real_path = (Resolve-Path $cmd1).Path.TrimEnd("\")
+                $WD_PREV_PWD[0] = $PWD.Path
+                $WD_PREV_PWD[1] = $real_path
+                Set-Location $real_path
+            } else {
+                throw "no such directory: $cmd1"
+            }
         } else {
             switch ($cmd1) {
                 $WD_CMDS.HELP {
@@ -133,7 +138,7 @@ function wd {
                     } elseif (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
-                    $WD_PREV_PWD[0] = $PWD.Path
+                    $WD_PREV_PWD[1] = $PWD.Path
                     Write-Output "$cmd2|$($PWD.Path)" >> $WD_FULL_PATH
                 }
                 $WD_CMDS.RENAME {
@@ -225,8 +230,8 @@ function wd {
                 }
             }
         }
-    } elseif ($WD_PREV_PWD[0]) {
-        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[0]) ? 1 : 0]
+    } elseif ($WD_PREV_PWD[1]) {
+        Set-Location $WD_PREV_PWD[($PWD.Path -eq $WD_PREV_PWD[1]) ? 0 : 1]
     }
 }
 
