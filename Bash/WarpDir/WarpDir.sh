@@ -25,7 +25,7 @@ if [ $1 ]; then
     else
         case $1 in
         "help")
-            echo -e "Commands:\n\n\t<no argument> (will toggle between current and previous directory)\n\n\tlist\n\n\tsave [alias]\n\n\trename [alias new_alias]\n\n\tremove [alias]\n\n"
+            echo -e "Commands:\n\n\t<no argument> (will toggle between current and previous directory)\n\n\tlist [--sort [alias|target]]\n\n\tsave [alias]\n\n\trename [alias new_alias]\n\n\tremove [alias]\n\n"
             ;;
         "save")
             if [ $2 ]; then
@@ -72,10 +72,12 @@ if [ $1 ]; then
             ;;
         "list")
             entries_table=$(handle_list $2 $3)
-            if [ ! "$entries_table" ]; then
-                return $(generate_error $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT $(join_list_on " " ${SORT_FLAGS[@]}))
+            if [ "$entries_table" == "E_FLAG" ]; then
+                return $(generate_error $ERROR_KIND__COMMAND_FLAG_NOT_SUPPORTED $(join_list_on " " ${LIST_FLAGS[@]}))
+            elif [ "$entries_table" == "E_ARG" ]; then
+                return $(generate_error $ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT $(join_list_on " " ${SORT_ARGS[@]}))
             fi
-            echo -e "$entries_table" | column -L -ts "|"
+            echo -e "\n$entries_table\n" | column -L -ts "|"
             ;;
         *)
             if [ $(alias_exist $1) -eq 0 ]; then
