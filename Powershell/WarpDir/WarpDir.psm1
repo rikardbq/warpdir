@@ -10,13 +10,16 @@ $WD_CMDS = @{
     REMOVE = "remove";
     LIST = "list";
 }
+$WD_LIST_FLAGS = @("--sort")
+$WD_SORT_ARGS = @("alias", "target")
 $WD_BAD_CHARACTERS = @(".", "/")
 $WD_ERROR_KIND = @{
     ALIAS_NOT_PROVIDED = "NOT_PROVIDED";
     ALIAS_NOT_EXIST = "NOT_EXIST";
     ALIAS_ALREADY_EXIST = "ALREADY_EXIST";
     ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "NOT_ALLOWED_KEYWORD_RESERVED";
-    ALIAS_NOT_ALLOWED_NAME_MALFORMED="ALIAS_NOT_ALLOWED_NAME_MALFORMED"
+    ALIAS_NOT_ALLOWED_NAME_MALFORMED="ALIAS_NOT_ALLOWED_NAME_MALFORMED";
+    COMMAND_FLAG_NOT_SUPPORTED="COMMAND_FLAG_NOT_SUPPORTED";
     FLAG_SORT_MISSING_ARGUMENT = "MISSING_ARGUMENT";
 }
 
@@ -42,6 +45,9 @@ function generate_error {
         }
         $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED {
             throw "alias not allowed, characters [ $error_meta ] may not be in the name"
+        }
+        $WD_ERROR_KIND.COMMAND_FLAG_NOT_SUPPORTED {
+            throw "flag not supported, provide one of [ $error_meta ]"
         }
         $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT {
             throw "missing flag argument, provide one of [ $error_meta ]"
@@ -183,8 +189,8 @@ function wd {
                             Target = $wd_alias_split[1];
                         }
                     }
-                    switch ($cmd2) {
-                        "--sort" {
+                    if ($cmd2) {
+                        if ($cmd2 -eq "--sort") {
                             switch ($cmd3) {
                                 "alias" {
                                     return $default_list | Sort-Object { $_.Alias }
@@ -193,13 +199,14 @@ function wd {
                                     return $default_list | Sort-Object { $_.Target }
                                 }
                                 default {
-                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT "alias, target"
+                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $($WD_SORT_ARGS -join " ")
                                 }
                             }
+                        } else {
+                            generate_error $WD_ERROR_KIND.COMMAND_FLAG_NOT_SUPPORTED $($WD_LIST_FLAGS -join " ")
                         }
-                        default {
-                            $default_list
-                        }
+                    } else {
+                        $default_list
                     }
                 }
                 default {
