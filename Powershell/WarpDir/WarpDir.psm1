@@ -4,23 +4,23 @@ $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
 $WD_CMDS = @{
-    HELP   = "help";
-    SAVE   = "save";
+    HELP = "help";
+    SAVE = "save";
     RENAME = "rename";
     REMOVE = "remove";
-    LIST   = "list";
+    LIST = "list";
 }
 $WD_LIST_FLAGS = @("--sort")
 $WD_SORT_ARGS = @("alias", "target")
 $WD_BAD_CHARACTERS = @(".", "/", "~", "\")
 $WD_ERROR_KIND = @{
-    ALIAS_NOT_PROVIDED                 = "NOT_PROVIDED";
-    ALIAS_NOT_EXIST                    = "NOT_EXIST";
-    ALIAS_ALREADY_EXIST                = "ALREADY_EXIST";
+    ALIAS_NOT_PROVIDED = "NOT_PROVIDED";
+    ALIAS_NOT_EXIST = "NOT_EXIST";
+    ALIAS_ALREADY_EXIST = "ALREADY_EXIST";
     ALIAS_NOT_ALLOWED_KEYWORD_RESERVED = "NOT_ALLOWED_KEYWORD_RESERVED";
-    ALIAS_NOT_ALLOWED_NAME_MALFORMED   = "ALIAS_NOT_ALLOWED_NAME_MALFORMED";
-    COMMAND_FLAG_NOT_SUPPORTED         = "COMMAND_FLAG_NOT_SUPPORTED";
-    FLAG_SORT_MISSING_ARGUMENT         = "MISSING_ARGUMENT";
+    ALIAS_NOT_ALLOWED_NAME_MALFORMED = "ALIAS_NOT_ALLOWED_NAME_MALFORMED";
+    COMMAND_FLAG_NOT_SUPPORTED = "COMMAND_FLAG_NOT_SUPPORTED";
+    FLAG_SORT_MISSING_ARGUMENT = "MISSING_ARGUMENT";
 }
 
 function generate_error {
@@ -125,19 +125,16 @@ function wd {
         New-Item -Path $WD_FULL_PATH -ItemType File | Out-Null
     }
     if ($cmd1) {
-
         if ($cmd1 -like "~/*" -or $cmd1 -like "~\*" -or $cmd1 -like "./*" -or $cmd1 -like ".\*" -or $cmd1 -eq ".." -or (is_path_fully_qualified $cmd1)) {
             if (Test-Path -Path $cmd1) {
                 $real_path = (Resolve-Path $cmd1).Path.TrimEnd("\")
                 $WD_PREV_PWD[0] = $PWD.Path
                 $WD_PREV_PWD[1] = $real_path
                 Set-Location $real_path
-            }
-            else {
+            } else {
                 throw "no such directory: $cmd1"
             }
-        }
-        else {
+        } else {
             switch ($cmd1) {
                 $WD_CMDS.HELP {
                     Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [alias|target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
@@ -145,14 +142,11 @@ function wd {
                 $WD_CMDS.SAVE {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
-                    }
-                    elseif ($WD_CMDS.Values -contains $cmd2) {
+                    } elseif ($WD_CMDS.Values -contains $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
-                    }
-                    elseif (contains_bad_characters $cmd2) {
+                    } elseif (contains_bad_characters $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
-                    }
-                    elseif (alias_exists $cmd2) {
+                    } elseif (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     $WD_PREV_PWD[1] = $PWD.Path
@@ -161,25 +155,20 @@ function wd {
                 $WD_CMDS.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
-                    }
-                    elseif (-not (alias_exists $cmd2)) {
+                    } elseif (-not (alias_exists $cmd2)) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
-                    }
-                    elseif (alias_exists $cmd3) {
+                    } elseif (alias_exists $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
-                    }
-                    elseif ($WD_CMDS.Values -contains $cmd3) {
+                    } elseif ($WD_CMDS.Values -contains $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
-                    }
-                    elseif (contains_bad_characters $cmd3) {
+                    } elseif (contains_bad_characters $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
                         if ($cmd2 -eq $wd_alias_split[0]) {
                             "$cmd3|$($wd_alias_split[1])"
-                        }
-                        else {
+                        } else {
                             $_
                         }
                     }
@@ -198,8 +187,7 @@ function wd {
                         if ($wd_alias_remove -eq "" -or $wd_alias_remove -ieq "n") {
                             Write-Output "nothing changed"
                             $wd_prompted = $false
-                        }
-                        elseif ($wd_alias_remove -ieq "y") {
+                        } elseif ($wd_alias_remove -ieq "y") {
                             $wd_entries_filtered = get_wd_entries | Where-Object {
                                 $cmd2 -ne $_.Split("|")[0]
                             }
@@ -233,12 +221,10 @@ function wd {
                                     generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $($WD_SORT_ARGS -join " ")
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             generate_error $WD_ERROR_KIND.COMMAND_FLAG_NOT_SUPPORTED $($WD_LIST_FLAGS -join " ")
                         }
-                    }
-                    else {
+                    } else {
                         $default_list
                     }
                 }
@@ -258,12 +244,10 @@ function wd {
                 }
             }
         }
-    }
-    elseif ($WD_PREV_PWD[1]) {
+    } elseif ($WD_PREV_PWD[1]) {
         if ($PWD.Path -eq $WD_PREV_PWD[1]) {
             Set-Location $WD_PREV_PWD[0]    
-        }
-        else {
+        } else {
             Set-Location $WD_PREV_PWD[1]
         }
     }
@@ -275,8 +259,7 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
                 $cmd_split = $_.Split("|")
                 if ($cmd_split.Count -eq 1) {
                     $cmd_split
-                }
-                else {
+                } else {
                     $cmd_split[0]
                 }
             }) + ((Get-ChildItem -Directory).Name | ForEach-Object {
