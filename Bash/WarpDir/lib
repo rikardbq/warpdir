@@ -8,7 +8,7 @@ WD_COMMANDS=("help" "save" "rename" "remove" "list")
 
 LIST_FLAGS=("--sort")
 SORT_ARGS=("alias" "target")
-BAD_CHARACTERS=("." "/")
+BAD_CHARACTERS=("." "/" "~" "\\")
 
 ERROR_KIND__ALIAS_NOT_PROVIDED="ALIAS_NOT_PROVIDED"
 ERROR_KIND__ALIAS_NOT_EXIST="ALIAS_NOT_EXIST"
