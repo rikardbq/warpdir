@@ -20,8 +20,14 @@ fi
 
 if [ $1 ]; then
     if [[ "$1" =~ "/".* || "$1" =~ "./".* || "$1" == ".." ]]; then
-        WD_PREV_PWD=($PWD $(realpath $1))
-        cd $1
+        real_path=$(realpath $1)
+        if [ -d $real_path ]; then
+            WD_PREV_PWD=($PWD $(realpath $1))
+            cd $1
+        else
+            echo "no such directory: $real_path" 1>&2
+            return 1
+        fi
     else
         case $1 in
         "help")
