@@ -65,7 +65,7 @@ get_wd_entries() {
     local entries=""
     while read -r "entry"; do
         entries+="$entry "
-    done <<< $WD_FULL_PATH
+    done < "$WD_FULL_PATH"
     echo $entries
 }
 
