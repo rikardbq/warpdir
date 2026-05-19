@@ -106,7 +106,7 @@ function is_qualified_path {
         [Parameter(Mandatory = $true)]
         $path
     )
-    return $path -eq ".." -or 
+    return $path -match "^[.]{2}" -or 
         $path -match "^[~.][/\\]" -or 
         $path -match "^[a-zA-Z]:[/\\]" -or 
         $path -match "^\\\\" -or 
@@ -131,7 +131,13 @@ function wd {
     if ($cmd1) {
         if (is_qualified_path $cmd1) {
             if (Test-Path -Path $cmd1) {
-                $real_path = (Resolve-Path $cmd1).Path.TrimEnd("\")
+                $real_path = (Resolve-Path $cmd1).Path
+                if (-not ($real_path -match ":[\\]$")) {
+                    $real_path = $real_path.TrimEnd("\")
+                }
+                if (-not ($real_path -eq "/")) {
+                    $real_path = $real_path.TrimEnd("/")
+                }
                 $WD_PREV_PWD[0] = $PWD.Path
                 $WD_PREV_PWD[1] = $real_path
                 Set-Location $real_path
@@ -249,7 +255,7 @@ function wd {
             }
         }
     } elseif ($WD_PREV_PWD[1]) {
-        if ($PWD.Path -eq $WD_PREV_PWD[1]) {
+        if ($PWD.Path -ieq $WD_PREV_PWD[1]) {
             Set-Location $WD_PREV_PWD[0]    
         } else {
             Set-Location $WD_PREV_PWD[1]
@@ -259,7 +265,7 @@ function wd {
 
 Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $completions = ($WD_CMDS.Values + ((get_wd_entries) | ForEach-Object {
+    $completions = (@("..") + $WD_CMDS.Values + ((get_wd_entries) | ForEach-Object {
                 $cmd_split = $_.Split("|")
                 if ($cmd_split.Count -eq 1) {
                     $cmd_split
