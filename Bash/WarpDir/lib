@@ -189,12 +189,14 @@ handle_list() {
     local raw_table="$table_header$(get_wd_entries)"
     if [ $1 ]; then
         if [ "$1" == "--sort" ]; then
+            local prnt='NR<=2{print; next}{print | '
+            local srt='"sort -t \"|\" -k '
             case $2 in
             "alias")
-                echo -e "$raw_table" | awk 'NR<=2{print; next}{print | "sort -t \"|\" -k 1"}'
+                echo -e "$raw_table" | awk "$prnt$srt"'1"}'
                 ;;
             "target")
-                echo -e "$raw_table" | awk 'NR<=2{print; next}{print | "sort -t \"|\" -k 2"}'
+                echo -e "$raw_table" | awk "$prnt$srt"'2"}'
                 ;;
             *)
                 echo "E_ARG"
