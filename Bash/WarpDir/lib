@@ -64,15 +64,23 @@ join_list_on() {
 get_wd_entries() {
     local entries=""
     while read -r "entry"; do
-        entries+="$entry "
+        entries+="$entry\n"
     done < $WD_FULL_PATH
-    echo $entries
+    echo -e $entries
+}
+
+print_entry_alias() {
+    echo "$1" | awk -F "|" '{print $1}'
+}
+
+print_entry_target() {
+    echo "$1" | awk -F "|" '{print $2}'
 }
 
 get_wd_aliases() {
     local aliases=""
     for entry in $(get_wd_entries); do
-        local alias=$(echo "$entry" | cut -d "|" -f1)
+        local alias=$(print_entry_alias "$entry")
         aliases+="$alias "
     done
     echo $aliases
@@ -81,7 +89,7 @@ get_wd_aliases() {
 find_entry_by_alias() {
     local val=""
     for entry in $(get_wd_entries); do
-        local alias=$(echo "$entry" | cut -d "|" -f1)
+        local alias=$(print_entry_alias "$entry")
         if [ "$1" == "$alias" ]; then
             val=$entry
             break
@@ -126,7 +134,7 @@ is_reserved_keyword() {
 goto_alias_target() {
     local entry=$(find_entry_by_alias $1)
     if [ "$entry" != "" ]; then
-        local target=$(echo "$entry" | cut -d "|" -f2)
+        local target=$(print_entry_target "$entry")
         if [ "$PWD" != "$target" ]; then
             WD_PREV_PWD_OLD="$PWD"
             WD_PREV_PWD_NEW="$target"
@@ -145,7 +153,7 @@ handle_remove() {
             wd_prompted=0
         elif [ "$user_input" == "y" -o "$user_input" == "Y" ]; then
             for entry in $(get_wd_entries); do
-                local alias=$(echo "$entry" | cut -d "|" -f1)
+                local alias=$(print_entry_alias "$entry")
                 if [ "$1" != "$alias" ]; then
                     filtered_entries+="$entry "
                 fi
@@ -164,8 +172,8 @@ handle_remove() {
 handle_rename() {
     local filtered_entries=""
     for entry in $(get_wd_entries); do
-        local alias=$(echo "$entry" | cut -d "|" -f1)
-        local target=$(echo "$entry" | cut -d "|" -f2)
+        local alias=$(print_entry_alias "$entry")
+        local target=$(print_entry_target "$entry")
         if [ "$1" == "$alias" ]; then
             filtered_entries+="$2|$target "
         else
@@ -178,7 +186,7 @@ handle_rename() {
 
 handle_list() {
     local table_header="Alias|Target\n-----|------\n"
-    local raw_table="$table_header$(cat $WD_FULL_PATH)"
+    local raw_table="$table_header$(get_wd_entries)"
     if [ $1 ]; then
         if [ "$1" == "--sort" ]; then
             case $2 in
