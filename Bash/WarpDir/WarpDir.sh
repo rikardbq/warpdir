@@ -22,8 +22,10 @@ if [ $1 ]; then
     if [[ "$1" =~ "/".* || "$1" =~ "./".* || "$1" == ".." ]]; then
         real_path=$(realpath $1)
         if [ -d $real_path ]; then
-            WD_PREV_PWD_OLD="$PWD"
-            WD_PREV_PWD_NEW="$real_path"
+            if [ "$PWD" != "$real_path" ]; then
+                WD_PREV_PWD_OLD="$PWD"
+                WD_PREV_PWD_NEW="$real_path"
+            fi
             cd $1
         else
             echo "no such directory: $1" 1>&2
