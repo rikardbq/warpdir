@@ -138,8 +138,10 @@ function wd {
                 if (-not ($real_path -eq "/")) {
                     $real_path = $real_path.TrimEnd("/")
                 }
-                $WD_PREV_PWD[0] = $PWD.Path
-                $WD_PREV_PWD[1] = $real_path
+                if ($PWD.Path -ne $real_path) {
+                    $WD_PREV_PWD[0] = $PWD.Path
+                    $WD_PREV_PWD[1] = $real_path
+                }
                 Set-Location $real_path
             } else {
                 throw "no such directory: $cmd1"
