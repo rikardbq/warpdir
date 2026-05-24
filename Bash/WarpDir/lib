@@ -225,4 +225,4 @@ check_autocomplete() {
 # Please do not change this value as the function and / or command
 # will run each time you return to prompt.
 # To disable autocomplete just comment out the line below.
-PROMPT_COMMAND="check_autocomplete"
+PROMPT_COMMAND="$PROMPT_COMMAND;check_autocomplete"
