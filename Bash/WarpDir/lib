@@ -211,7 +211,8 @@ handle_list() {
 check_autocomplete() {
     if ! shopt -oq posix; then
         if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-            complete -W "$WD_COMMANDS $(get_wd_aliases) .. $(find . -maxdepth 1 -type d)" wd
+            local completable=".. $(find . -maxdepth 1 -type d) $WD_COMMANDS $(get_wd_aliases)"
+            complete -o nosort -W "$completable" wd
         fi
     fi
 }
