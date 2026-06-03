@@ -3,13 +3,7 @@ $WD_PREV_PWD = ($HOME, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
-$WD_CMDS = @{
-    HELP = "help";
-    SAVE = "save";
-    RENAME = "rename";
-    REMOVE = "remove";
-    LIST = "list";
-}
+$WD_CMDS = @("help", "save", "rename", "remove", "list")
 $WD_LIST_FLAGS = @("--sort")
 $WD_SORT_ARGS = @("alias", "target")
 $WD_BAD_CHARACTERS = @(".", "/", "~", "\")
@@ -21,6 +15,10 @@ $WD_ERROR_KIND = @{
     ALIAS_NOT_ALLOWED_NAME_MALFORMED = "ALIAS_NOT_ALLOWED_NAME_MALFORMED";
     COMMAND_FLAG_NOT_SUPPORTED = "COMMAND_FLAG_NOT_SUPPORTED";
     FLAG_SORT_MISSING_ARGUMENT = "MISSING_ARGUMENT";
+}
+$CMD_MAP = @{}
+foreach ($v in $WD_CMDS) {
+    $CMD_MAP.Add($v.ToUpper(), $v)
 }
 
 function generate_error {
@@ -148,33 +146,33 @@ function wd {
             }
         } else {
             switch ($cmd1) {
-                $WD_CMDS.HELP {
+                $CMD_MAP.HELP {
                     Write-Output "Commands:`n`n`t<no argument> (will toggle between current and previous directory)`n`n`tlist [--sort [alias|target]]`n`n`tsave [alias]`n`n`trename [alias new_alias]`n`n`tremove [alias]`n`n"
                 }
-                $WD_CMDS.SAVE {
+                $CMD_MAP.SAVE {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
-                    } elseif ($WD_CMDS.Values -contains $cmd2) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
+                    } elseif ($WD_CMDS -contains $cmd2) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $WD_CMDS
                     } elseif (contains_bad_characters $cmd2) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $WD_BAD_CHARACTERS
                     } elseif (alias_exists $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
                     }
                     $WD_PREV_PWD[1] = $PWD.Path
                     Write-Output "$cmd2|$($PWD.Path)" >> $WD_FULL_PATH
                 }
-                $WD_CMDS.RENAME {
+                $CMD_MAP.RENAME {
                     if (-not $cmd2 -or -not $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     } elseif (-not (alias_exists $cmd2)) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     } elseif (alias_exists $cmd3) {
                         generate_error $WD_ERROR_KIND.ALIAS_ALREADY_EXIST
-                    } elseif ($WD_CMDS.Values -contains $cmd3) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $($WD_CMDS.Values -join " ")
+                    } elseif ($WD_CMDS -contains $cmd3) {
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_KEYWORD_RESERVED $WD_CMDS
                     } elseif (contains_bad_characters $cmd3) {
-                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $($WD_BAD_CHARACTERS -join " ")
+                        generate_error $WD_ERROR_KIND.ALIAS_NOT_ALLOWED_NAME_MALFORMED $WD_BAD_CHARACTERS
                     }
                     $wd_entries_mapped = get_wd_entries | ForEach-Object {
                         $wd_alias_split = $_.Split("|")
@@ -186,7 +184,7 @@ function wd {
                     }
                     Write-Output $wd_entries_mapped > $WD_FULL_PATH
                 }
-                $WD_CMDS.REMOVE {
+                $CMD_MAP.REMOVE {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
@@ -208,7 +206,7 @@ function wd {
                         }
                     }
                 }
-                $WD_CMDS.LIST {
+                $CMD_MAP.LIST {
                     $wd_entries = get_wd_entries
                     $default_list = @()
                     if ($wd_entries.Count -gt 0) {
@@ -230,11 +228,11 @@ function wd {
                                     return $default_list | Sort-Object { $_.Target }
                                 }
                                 default {
-                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $($WD_SORT_ARGS -join " ")
+                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $WD_SORT_ARGS
                                 }
                             }
                         } else {
-                            generate_error $WD_ERROR_KIND.COMMAND_FLAG_NOT_SUPPORTED $($WD_LIST_FLAGS -join " ")
+                            generate_error $WD_ERROR_KIND.COMMAND_FLAG_NOT_SUPPORTED $WD_LIST_FLAGS
                         }
                     } else {
                         $default_list
@@ -267,16 +265,16 @@ function wd {
 
 Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $completions = (@("..") + $WD_CMDS.Values + ((get_wd_entries) | ForEach-Object {
-                $cmd_split = $_.Split("|")
-                if ($cmd_split.Count -eq 1) {
-                    $cmd_split
-                } else {
-                    $cmd_split[0]
-                }
-            }) + ((Get-ChildItem -Directory).Name | ForEach-Object {
-                "./$_"
-            })) | Sort-Object
+    $completions = (@("..") + ((Get-ChildItem -Directory).Name | ForEach-Object {
+        "./$_"
+    }) + $WD_CMDS + ((get_wd_entries) | ForEach-Object {
+        $cmd_split = $_.Split("|")
+        if ($cmd_split.Count -eq 1) {
+            $cmd_split
+        } else {
+            $cmd_split[0]
+        }
+    }))
     $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
     }
