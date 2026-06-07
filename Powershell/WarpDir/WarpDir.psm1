@@ -111,6 +111,27 @@ function is_qualified_path {
         $path -match "^[/\\]"
 }
 
+function resolve_real_path {
+    param(
+        [Parameter(Mandatory = $true)]
+        $path
+    )
+
+    if (Test-Path -Path $path) {
+        $real_path = (Resolve-Path $path).Path
+        if (-not ($real_path -match ":[\\]$")) {
+            $real_path = $real_path.TrimEnd("\")
+        }
+        if (-not ($real_path -eq "/")) {
+            $real_path = $real_path.TrimEnd("/")
+        }
+
+        return $real_path
+    } else {
+        throw "no such directory: $path"
+    }
+}
+
 function wd {
     param (
         [Parameter(Mandatory = $false)]
@@ -128,22 +149,12 @@ function wd {
     }
     if ($cmd1) {
         if (is_qualified_path $cmd1) {
-            if (Test-Path -Path $cmd1) {
-                $real_path = (Resolve-Path $cmd1).Path
-                if (-not ($real_path -match ":[\\]$")) {
-                    $real_path = $real_path.TrimEnd("\")
-                }
-                if (-not ($real_path -eq "/")) {
-                    $real_path = $real_path.TrimEnd("/")
-                }
-                if ($PWD.Path -ne $real_path) {
-                    $WD_PREV_PWD[0] = $PWD.Path
-                    $WD_PREV_PWD[1] = $real_path
-                }
-                Set-Location $real_path
-            } else {
-                throw "no such directory: $cmd1"
+            $real_path = resolve_real_path $cmd1
+            if ($PWD.Path -ne $real_path) {
+                $WD_PREV_PWD[0] = $PWD.Path
+                $WD_PREV_PWD[1] = $real_path
             }
+            Set-Location $real_path
         } else {
             switch ($cmd1) {
                 $CMD_MAP.HELP {
@@ -239,13 +250,17 @@ function wd {
                     }
                 }
                 default {
+                    $split_cmd1 = $cmd1 -replace "^[/\\]", "" -split "[/\\]"
                     $wd_entries_filtered = get_wd_entries | Where-Object {
-                        $cmd1 -eq $_.Split("|")[0]
+                        $split_cmd1[0] -eq $_.Split("|")[0]
                     }
                     if (-not $wd_entries_filtered) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_EXIST
                     }
                     $target = $wd_entries_filtered.Split("|")[1]
+                    if ($split_cmd1.Count -gt 1) {
+                        $target = resolve_real_path ($target + "/" + $split_cmd1[1])
+                    }
                     if ($PWD.Path -ne $target) {
                         $WD_PREV_PWD[0] = $PWD.Path
                         $WD_PREV_PWD[1] = $target
@@ -268,12 +283,7 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     $completions = (@("..") + ((Get-ChildItem -Directory).Name | ForEach-Object {
         "./$_"
     }) + $WD_CMDS + ((get_wd_entries) | ForEach-Object {
-        $cmd_split = $_.Split("|")
-        if ($cmd_split.Count -eq 1) {
-            $cmd_split
-        } else {
-            $cmd_split[0]
-        }
+        $_.Split("|")[0]
     }))
     $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
