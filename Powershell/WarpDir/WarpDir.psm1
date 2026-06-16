@@ -3,7 +3,7 @@ $WD_PREV_PWD = ($HOME, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
-$WD_CMDS = @("help", "save", "rename", "remove", "list")
+$WD_CMDS = @("help", "save", "rename", "remove", "rm", "list", "ls")
 $WD_LIST_FLAGS = @("--sort")
 $WD_SORT_ARGS = @("alias", "target")
 $WD_BAD_CHARACTERS = @(".", "/", "~", "\")
@@ -285,6 +285,21 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     }) + $WD_CMDS + ((get_wd_entries) | ForEach-Object {
         $_.Split("|")[0]
     }))
+
+    # TODO test this some more and fix it
+    $split_word = $wordToComplete.Split("/").Split("\\")
+    if ($wordToComplete -match "[/\\]") {
+        $entry = (get_wd_entries) | Where-Object {
+            $split_entry = $_.Split("|")
+            $split_entry[0] -eq $split_word[0]
+        }
+        $target = ($entry ? $entry.Split("|") : "")[1]
+        
+        $completions += ((Get-ChildItem -Directory $target).Name | ForEach-Object {
+            "./$_"
+        })
+    }
+
     $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
     }
