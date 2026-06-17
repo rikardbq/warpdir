@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # WarpDir <3
-if [ ! $WD_ROOT ]; then
-    echo "lib not sourced yet, sourcing it now (see README.md) for how to get rid of this message"
-    SELF_DIR="$(dirname $BASH_SOURCE)"
-    if [ ! -f "$SELF_DIR/lib" ]; then
-        echo "lib file not found!" 1>&2
-        return 1
-    else
-        . "$SELF_DIR/lib"
-    fi
+if [ ! $WD_PREV_PWD_OLD ]; then
+    WD_PREV_PWD_OLD="$HOME"
+    WD_PREV_PWD_NEW=""
+fi
+WD_SCRIPT_SELF_DIR="$(dirname $BASH_SOURCE)"
+if [ ! -f "$WD_SCRIPT_SELF_DIR/lib" ]; then
+    echo "lib file not found!" 1>&2
+    return 1
+else
+    . "$WD_SCRIPT_SELF_DIR/lib"
 fi
 if [ ! -d "$HOME/$WD_ROOT" ]; then
     mkdir "$HOME/$WD_ROOT"
@@ -19,7 +20,7 @@ if [ ! -f $WD_FULL_PATH ]; then
 fi
 
 if [ $1 ]; then
-    if [[ "$1" =~ "/".* || "$1" =~ "./".* || "$1" == ".." ]]; then
+    if [[ "$1" =~ ^/.* || "$1" =~ ^./.* || "$1" == ".." ]]; then
         real_path=$(realpath $1)
         if [ -d $real_path ]; then
             if [ "$PWD" != "$real_path" ]; then
@@ -89,10 +90,12 @@ if [ $1 ]; then
             echo -e "\n$entries_table\n" | column -L -ts "|"
             ;;
         *)
-            if [ $(alias_exist $1) -eq 0 ]; then
+            cmd=$(echo "$1" | awk -F "/" '{ st = index($0,"/");print $1 "|" substr($0,st+1)}')
+            split_cmd1=$(echo "$cmd" | awk -F "|" '{print $1}')
+            if [ $(alias_exist $split_cmd1) -eq 0 ]; then
                 return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
             else
-                goto_alias_target $1
+                goto_alias_target $cmd
             fi
             ;;
         esac
@@ -104,3 +107,6 @@ elif [ $WD_PREV_PWD_NEW ]; then
         cd $WD_PREV_PWD_NEW
     fi
 fi
+
+unset_everything
+unset unset_everything

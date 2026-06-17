@@ -1,7 +1,5 @@
 #!/bin/bash
 
-WD_PREV_PWD_OLD="$HOME"
-WD_PREV_PWD_NEW=""
 WD_ROOT=".wd"
 WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
@@ -51,6 +49,7 @@ generate_error() {
         message="undefined error"
         ;;
     esac
+    unset_everything
     echo $message 1>&2
     return 1
 }
@@ -61,7 +60,7 @@ join_list_on() {
     echo "$*"
 }
 
-get_wd_entries() {
+get_entries() {
     local entries=""
     while read -r "entry"; do
         entries+="$entry\n"
@@ -77,18 +76,9 @@ print_entry_target() {
     echo "$1" | awk -F "|" '{print $2}'
 }
 
-get_wd_aliases() {
-    local aliases=""
-    for entry in $(get_wd_entries); do
-        local alias=$(print_entry_alias "$entry")
-        aliases+="$alias "
-    done
-    echo $aliases
-}
-
 find_entry_by_alias() {
     local val=""
-    for entry in $(get_wd_entries); do
+    for entry in $(get_entries); do
         local alias=$(print_entry_alias "$entry")
         if [ "$1" == "$alias" ]; then
             val=$entry
@@ -132,12 +122,17 @@ is_reserved_keyword() {
 }
 
 goto_alias_target() {
-    local entry=$(find_entry_by_alias $1)
+    local split_cmd1=$(echo "$1" | awk -F "|" '{print $1}')
+    local split_cmd2=$(echo "$1" | awk -F "|" '{print $2}')
+    local entry=$(find_entry_by_alias $split_cmd1)
     if [ "$entry" != "" ]; then
         local target=$(print_entry_target "$entry")
-        if [ "$PWD" != "$target" ]; then
+        if [ "$split_cmd1" != "$split_cmd2" ]; then
+            target="$target/$split_cmd2"
+        fi
+        if [ "$PWD" != "$(realpath $target)" ]; then
             WD_PREV_PWD_OLD="$PWD"
-            WD_PREV_PWD_NEW="$target"
+            WD_PREV_PWD_NEW="$(realpath $target)"
         fi
         cd $target
     fi
@@ -152,7 +147,7 @@ handle_remove() {
             echo "nothing changed"
             wd_prompted=0
         elif [ "$user_input" == "y" -o "$user_input" == "Y" ]; then
-            for entry in $(get_wd_entries); do
+            for entry in $(get_entries); do
                 local alias=$(print_entry_alias "$entry")
                 if [ "$1" != "$alias" ]; then
                     filtered_entries+="$entry "
@@ -171,7 +166,7 @@ handle_remove() {
 
 handle_rename() {
     local filtered_entries=""
-    for entry in $(get_wd_entries); do
+    for entry in $(get_entries); do
         local alias=$(print_entry_alias "$entry")
         local target=$(print_entry_target "$entry")
         if [ "$1" == "$alias" ]; then
@@ -186,7 +181,7 @@ handle_rename() {
 
 handle_list() {
     local table_header="Alias|Target\n-----|------\n"
-    local raw_table="$table_header$(get_wd_entries)"
+    local raw_table="$table_header$(get_entries)"
     if [ $1 ]; then
         if [ "$1" == "--sort" ]; then
             case $2 in
@@ -208,24 +203,6 @@ handle_list() {
     fi
 }
 
-check_autocomplete() {
-    if ! shopt -oq posix; then
-        if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-            local completable=".. $(find . -maxdepth 1 -type d) $WD_COMMANDS $(get_wd_aliases)"
-            complete -o nosort -W "$completable" wd
-        fi
-    fi
+unset_everything() {
+    unset WD_SCRIPT_SELF_DIR WD_ROOT WD_DIRS LIST_FLAGS SORT_ARGS BAD_CHARACTERS ERROR_KIND__ALIAS_NOT_PROVIDED ERROR_KIND__ALIAS_NOT_EXIST ERROR_KIND__ALIAS_ALREADY_EXIST ERROR_KIND__ALIAS_NOT_ALLOWED_KEYWORD_RESERVED ERROR_KIND__ALIAS_NOT_ALLOWED_NAME_MALFORMED ERROR_KIND__COMMAND_FLAG_NOT_SUPPORTED ERROR_KIND__FLAG_SORT_MISSING_ARGUMENT generate_error join_list_on get_entries print_entry_alias print_entry_target find_entry_by_alias alias_exist contains_bad_characters is_reserved_keyword goto_alias_target handle_remove handle_rename handle_list cmd split_cmd1 entries_table
 }
-
-# makes "check_autocomplete" function run
-# every time the prompt becomes available.
-# I.E when the shell loads or a command has been run and returned.
-# ------
-# Please do not change this value as the function and / or command
-# will run each time you return to prompt.
-# To disable autocomplete just comment out the line below.
-if [ ! "$PROMPT_COMMAND" ]; then
-    PROMPT_COMMAND="check_autocomplete"
-else
-    PROMPT_COMMAND="$PROMPT_COMMAND;check_autocomplete"
-fi
