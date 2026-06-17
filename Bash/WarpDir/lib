@@ -5,7 +5,7 @@ WD_PREV_PWD_NEW=""
 WD_ROOT=".wd"
 WD_DIRS="dirs"
 WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
-WD_COMMANDS="help save rename remove list"
+WD_COMMANDS="help save rename remove rm list ls"
 
 LIST_FLAGS="--sort"
 SORT_ARGS="alias target"

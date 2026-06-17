@@ -68,7 +68,7 @@ if [ $1 ]; then
                 return $(generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED)
             fi
             ;;
-        "remove")
+        "remove"|"rm")
             if [ $2 ]; then
                 if [ $(alias_exist $2) -eq 0 ]; then
                     return $(generate_error $ERROR_KIND__ALIAS_NOT_EXIST)
@@ -79,7 +79,7 @@ if [ $1 ]; then
                 return $(generate_error $ERROR_KIND__ALIAS_NOT_PROVIDED)
             fi
             ;;
-        "list")
+        "list"|"ls")
             entries_table=$(handle_list $2 $3)
             if [ "$entries_table" == "E_FLAG" ]; then
                 return $(generate_error $ERROR_KIND__COMMAND_FLAG_NOT_SUPPORTED $LIST_FLAGS)
