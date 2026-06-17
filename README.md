@@ -22,6 +22,10 @@ With that said please use with care. See **[LICENSE](LICENSE.txt)**
 **Warping to the saved alias**\
 `$ wd dev`
 
+**Warping to the saved alias and directly into sub-directory**\
+Let's say `wd dev` leads to `/home/rikardbq/my/dev` which has a sub-directory called `frontend`\
+then we can do `$ wd dev/frontend`
+
 **Listing all aliases and their targets**\
 `$ wd list`\
 optional sort flag, can sort on alias and target\
