@@ -293,11 +293,13 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
             $_.Split("|")[0] -eq $split_word[0]
         }
         $target = ($entry ? $entry.Split("|") : "")[1]
-        $completions.FOLDERS = (Get-ChildItem -Directory $target).Name | ForEach-Object { $split_word[0] + "/" + $_ };
+        $target_output = $split_word[0];
         if ($split_word.Count -gt 2) {
             $joined_word = $split_word[1..($split_word.Count - 2)] -join "/"
-            $completions.FOLDERS = (Get-ChildItem -Directory "$target/$joined_word").Name | ForEach-Object { $split_word[0] + "/" + $joined_word + "/" + $_ };
+            $target = "$target/$joined_word"
+            $target_output = $split_word[0] + "/" + $joined_word
         }
+        $completions.FOLDERS = (Get-ChildItem -Directory $target).Name | ForEach-Object { "$target_output/$_" };
     }
 
     (
