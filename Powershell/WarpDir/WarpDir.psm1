@@ -195,7 +195,7 @@ function wd {
                     }
                     Write-Output $wd_entries_mapped > $WD_FULL_PATH
                 }
-                $CMD_MAP.REMOVE {
+                {$_ -eq $CMD_MAP.REMOVE -or $_ -eq $CMD_MAP.RM} {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
@@ -217,7 +217,7 @@ function wd {
                         }
                     }
                 }
-                $CMD_MAP.LIST {
+                {$_ -eq $CMD_MAP.LIST -or $_ -eq $CMD_MAP.LS} {
                     $wd_entries = get_wd_entries
                     $default_list = @()
                     if ($wd_entries.Count -gt 0) {
@@ -259,7 +259,8 @@ function wd {
                     }
                     $target = $wd_entries_filtered.Split("|")[1]
                     if ($split_cmd1.Count -gt 1) {
-                        $target = resolve_real_path ($target + "/" + $split_cmd1[1])
+                        $joined_cmd = $split_cmd1[1..($split_cmd1.Count - 1)] -join "/"
+                        $target = resolve_real_path "$target/$joined_cmd"
                     }
                     if ($PWD.Path -ne $target) {
                         $WD_PREV_PWD[0] = $PWD.Path
@@ -284,15 +285,19 @@ Register-ArgumentCompleter -CommandName wd -ScriptBlock {
         BACK = @("..");
         FOLDERS = (Get-ChildItem -Directory).Name | ForEach-Object { "./$_" };
         WD_CMDS = $WD_CMDS;
-        WD_ALIASES = (get_wd_entries) | ForEach-Object { $_.Split("|")[0] };
+        WD_ALIASES = get_wd_entries | ForEach-Object { $_.Split("|")[0] };
     }
     $split_word = $wordToComplete.Split("/").Split("\\")
-    if ($wordToComplete -match "[/\\]") {
-        $entry = (get_wd_entries) | Where-Object {
+    if ($split_word.Count -gt 1) {
+        $entry = get_wd_entries | Where-Object {
             $_.Split("|")[0] -eq $split_word[0]
         }
         $target = ($entry ? $entry.Split("|") : "")[1]
-        $completions.FOLDERS = (Get-ChildItem -Directory $target).Name | ForEach-Object { "$($split_word[0])/$_" };
+        $completions.FOLDERS = (Get-ChildItem -Directory $target).Name | ForEach-Object { $split_word[0] + "/" + $_ };
+        if ($split_word.Count -gt 2) {
+            $joined_word = $split_word[1..($split_word.Count - 2)] -join "/"
+            $completions.FOLDERS = (Get-ChildItem -Directory "$target/$joined_word").Name | ForEach-Object { $split_word[0] + "/" + $joined_word + "/" + $_ };
+        }
     }
 
     (
