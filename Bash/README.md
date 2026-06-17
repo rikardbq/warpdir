@@ -2,9 +2,8 @@
 Put the `WarpDir` folder wherever you like\
 Then in your `.bashrc` _(or somewhere you source your extra exports / aliases from)_ just append
 ```
-export WD_HOME="/home/rikardbq/dev/warpdir/Bash/WarpDir/"
-# this enables autocomplete and exposes functions that are used each prompt return
-. "$WD_HOME/lib0"
+export WD_HOME="/path/to/the/warpdir/Bash/WarpDir/"
+. "$WD_HOME/autocomplete"
 alias wd=". $WD_HOME/WarpDir.sh"
 ```
 Any config will be located at `$HOME/.wd/`
