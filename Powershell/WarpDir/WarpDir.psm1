@@ -280,27 +280,29 @@ function wd {
 
 Register-ArgumentCompleter -CommandName wd -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
-    $completions = (@("..") + ((Get-ChildItem -Directory).Name | ForEach-Object {
-        "./$_"
-    }) + $WD_CMDS + ((get_wd_entries) | ForEach-Object {
-        $_.Split("|")[0]
-    }))
-
-    # TODO test this some more and fix it
+    $completions = @{
+        BACK = @("..");
+        FOLDERS = (Get-ChildItem -Directory).Name | ForEach-Object { "./$_" };
+        WD_CMDS = $WD_CMDS;
+        WD_ALIASES = (get_wd_entries) | ForEach-Object { $_.Split("|")[0] };
+    }
     $split_word = $wordToComplete.Split("/").Split("\\")
     if ($wordToComplete -match "[/\\]") {
         $entry = (get_wd_entries) | Where-Object {
-            $split_entry = $_.Split("|")
-            $split_entry[0] -eq $split_word[0]
+            $_.Split("|")[0] -eq $split_word[0]
         }
         $target = ($entry ? $entry.Split("|") : "")[1]
-        
-        $completions += ((Get-ChildItem -Directory $target).Name | ForEach-Object {
-            "./$_"
-        })
+        $completions.FOLDERS = (Get-ChildItem -Directory $target).Name | ForEach-Object { "$($split_word[0])/$_" };
     }
 
-    $completions | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+    (
+        $completions.BACK + 
+        $completions.FOLDERS + 
+        $completions.WD_CMDS + 
+        $completions.WD_ALIASES
+    ) | Where-Object {
+        $_ -like "$wordToComplete*"
+    } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
     }
 }
