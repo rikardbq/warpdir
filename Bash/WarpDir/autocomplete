@@ -25,12 +25,12 @@ __wd__command_completer() {
                 break;
             fi
         done
-        folders=$(find "$target/$cmd_r" -maxdepth 2 -mindepth 1 -type d -exec dirname {} \; 2> /dev/null)
+        folders=$(find "$target/$cmd_r" -maxdepth 2 -mindepth 2 -exec dirname {} \; 2> /dev/null)
         local completable=""
         for folder in $folders; do
             if [ "$folder" != "$target" ]; then
                 local f=$(echo $folder | awk -F "/" '{print $NF}')
-                completable+="$alias/$f "
+                completable+="$alias/$cmd_r/$f "
             fi
         done
         COMPREPLY=($(compgen -W "$completable" -- "$cur"))
