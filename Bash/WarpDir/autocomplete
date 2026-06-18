@@ -1,26 +1,87 @@
 #!/bin/bash
 
+__wd__command_completer() {
+    local WD_ROOT=".wd"
+    local WD_DIRS="dirs"
+    local WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
+    local WD_COMMANDS="help save rename remove rm list ls"
+    local folders=$(find . -maxdepth 1 -type d)
+
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    if [[ "$cur" == *"/"* && "$cur" != "./"* && "$cur" != "/"* ]]; then
+        local cmd=$(echo "$cur" | awk -F "/" '{ st = index($0,"/");print $1 "|" substr($0,st+1)}')
+        local cmd_l=$(echo "$cmd" | awk -F "|" '{print $1}')
+        local cmd_r=$(echo "$cmd" | awk -F "|" '{print $2}')
+        local alias=""
+        local target=""
+        local entries=""
+        while read -r "entry"; do
+            entries+="$entry "
+        done < $WD_FULL_PATH
+        for entry in ${entries}; do
+            alias=$(echo $entry | awk -F "|" '{print $1}')
+            if [ "$cmd_l" == "$alias" ]; then
+                target=$(echo $entry | awk -F "|" '{print $2}')
+                break;
+            fi
+        done
+        folders=$(find "$target/$cmd_r" -maxdepth 2 -mindepth 1 -type d -exec dirname {} \; 2> /dev/null)
+        local completable=""
+        for folder in $folders; do
+            if [ "$folder" != "$target" ]; then
+                local f=$(echo $folder | awk -F "/" '{print $NF}')
+                completable+="$alias/$f "
+            fi
+        done
+        COMPREPLY=($(compgen -W "$completable" -- "$cur"))
+    else
+        local completable=".. $folders $WD_COMMANDS"
+        local entries=""
+        while read -r "entry"; do
+            entries+="$entry\n"
+        done < $WD_FULL_PATH
+        for entry in $entries; do
+            completable+=" $(echo $entry | awk -F '|' '{print $1}')"
+        done
+        COMPREPLY=($(compgen -W "$completable" -- "$cur"))
+    fi
+    # update the folders with entry_target + targetz[-1]
+
+    # local completable=".. $folders $WD_COMMANDS $aliases"
+    # COMPREPLY=($(compgen -W "$completable" -- "$cur"))
+}
+
 check_autocomplete() {
     if ! shopt -oq posix; then
         if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
-            local WD_ROOT=".wd"
-            local WD_DIRS="dirs"
-            local WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
-            local WD_COMMANDS="help save rename remove rm list ls"
-            local aliases=""
-            local entries=""
-            while read -r "entry"; do
-                entries+="$entry\n"
-            done < $WD_FULL_PATH
-            for entry in $entries; do
-                local alias=$(echo $entry | awk -F "|" '{print $1}')
-                aliases+="$alias "
-            done
-            local completable=".. $(find . -maxdepth 1 -type d) $WD_COMMANDS $aliases"
-            complete -o nosort -W "$completable" wd
+            complete -F __wd__command_completer wd
         fi
     fi
 }
+
+
+# check_autocomplete() {
+#     if ! shopt -oq posix; then
+#         if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
+#             local WD_ROOT=".wd"
+#             local WD_DIRS="dirs"
+#             local WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
+#             local WD_COMMANDS="help save rename remove rm list ls"
+#             local aliases=""
+#             local entries=""
+#             while read -r "entry"; do
+#                 entries+="$entry\n"
+#             done < $WD_FULL_PATH
+#             for entry in $entries; do
+#                 local alias=$(echo $entry | awk -F "|" '{print $1}')
+#                 aliases+="$alias "
+#             done
+#             local folders=$(find . -maxdepth 1 -type d)
+#             local completable=".. $folders $WD_COMMANDS $aliases"
+#             complete -o nosort -W "$completable" wd
+#         fi
+#     fi
+# }
 
 # makes "check_autocomplete" function run
 # every time the prompt becomes available.
@@ -28,7 +89,7 @@ check_autocomplete() {
 # ------
 # Please do not change this value as the function and / or command
 # will run each time you return to prompt.
-# To disable autocomplete just comment out the line below.
+# To disable autocomplete just comment out the lines below.
 if [ ! "$PROMPT_COMMAND" ]; then
     PROMPT_COMMAND="check_autocomplete"
 else
