@@ -3,7 +3,7 @@ $WD_PREV_PWD = ($HOME, $null)
 $WD_ROOT = ".wd"
 $WD_DIRS = "dirs"
 $WD_FULL_PATH = "$HOME/$WD_ROOT/$WD_DIRS"
-$WD_CMDS = @("help", "save", "rename", "remove", "list")
+$WD_CMDS = @("help", "save", "rename", "remove", "rm", "list", "ls")
 $WD_LIST_FLAGS = @("--sort")
 $WD_SORT_ARGS = @("alias", "target")
 $WD_BAD_CHARACTERS = @(".", "/", "~", "\")
@@ -111,6 +111,27 @@ function is_qualified_path {
         $path -match "^[/\\]"
 }
 
+function resolve_real_path {
+    param(
+        [Parameter(Mandatory = $true)]
+        $path
+    )
+
+    if (Test-Path -Path $path) {
+        $real_path = (Resolve-Path $path).Path
+        if (-not ($real_path -match ":[\\]$")) {
+            $real_path = $real_path.TrimEnd("\")
+        }
+        if (-not ($real_path -eq "/")) {
+            $real_path = $real_path.TrimEnd("/")
+        }
+
+        return $real_path
+    } else {
+        throw "no such directory: $path"
+    }
+}
+
 function wd {
     param (
         [Parameter(Mandatory = $false)]
@@ -128,22 +149,12 @@ function wd {
     }
     if ($cmd1) {
         if (is_qualified_path $cmd1) {
-            if (Test-Path -Path $cmd1) {
-                $real_path = (Resolve-Path $cmd1).Path
-                if (-not ($real_path -match ":[\\]$")) {
-                    $real_path = $real_path.TrimEnd("\")
-                }
-                if (-not ($real_path -eq "/")) {
-                    $real_path = $real_path.TrimEnd("/")
-                }
-                if ($PWD.Path -ne $real_path) {
-                    $WD_PREV_PWD[0] = $PWD.Path
-                    $WD_PREV_PWD[1] = $real_path
-                }
-                Set-Location $real_path
-            } else {
-                throw "no such directory: $cmd1"
+            $real_path = resolve_real_path $cmd1
+            if ($PWD.Path -ne $real_path) {
+                $WD_PREV_PWD[0] = $PWD.Path
+                $WD_PREV_PWD[1] = $real_path
             }
+            Set-Location $real_path
         } else {
             switch ($cmd1) {
                 $CMD_MAP.HELP {
@@ -184,7 +195,7 @@ function wd {
                     }
                     Write-Output $wd_entries_mapped > $WD_FULL_PATH
                 }
-                $CMD_MAP.REMOVE {
+                {$_ -eq $CMD_MAP.REMOVE -or $_ -eq $CMD_MAP.RM} {
                     if (-not $cmd2) {
                         generate_error $WD_ERROR_KIND.ALIAS_NOT_PROVIDED
                     }
@@ -206,7 +217,7 @@ function wd {
                         }
                     }
                 }
-                $CMD_MAP.LIST {
+                {$_ -eq $CMD_MAP.LIST -or $_ -eq $CMD_MAP.LS} {
                     $wd_entries = get_wd_entries
                     $default_list = @()
                     if ($wd_entries.Count -gt 0) {
