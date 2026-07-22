@@ -10,6 +10,7 @@ __wd__command_completer() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
     if [[ "$cur" == *"/"* && "$cur" != "./"* && "$cur" != "/"* ]]; then
         local cmd=$(echo "$cur" | awk -F "/" '{ st = index($0,"/");print $1 "|" substr($0,st+1)}')
+        # echo "$cmd"
         local cmd_l=$(echo "$cmd" | awk -F "|" '{print $1}')
         local cmd_r=$(echo "$cmd" | awk -F "|" '{print $2}')
         local alias=""
@@ -25,11 +26,15 @@ __wd__command_completer() {
                 break;
             fi
         done
+        # echo "$target"
+        # echo "$cmd_r"
         folders=$(find "$target/$cmd_r" -maxdepth 2 -mindepth 2 -exec dirname {} \; 2> /dev/null)
         local completable=""
         for folder in $folders; do
             if [ "$folder" != "$target" ]; then
                 local f=$(echo $folder | awk -F "/" '{print $NF}')
+                echo "<B         $f          "
+                echo "<n         $cmd_r      "
                 completable+="$alias/$cmd_r/$f "
             fi
         done
