@@ -1,0 +1,39 @@
+#!/bin/bash
+
+__wd_check_autocomplete() {
+    if ! shopt -oq posix; then
+        if [ -f /usr/share/bash-completion/bash_completion -o -f /etc/bash_completion ]; then
+            # base vars
+            local WD_ROOT=".wd"
+            local WD_DIRS="dirs"
+            local WD_FULL_PATH="$HOME/$WD_ROOT/$WD_DIRS"
+            local WD_COMMANDS="help save rename remove rm list ls"
+            # entries
+            local entries=""
+            while read -r "entry"; do
+                entries+="$entry "
+            done < $WD_FULL_PATH
+            # aliases
+            local aliases=""
+            for entry in $entries; do
+                local alias=$(echo "$entry" | awk -F "|" '{print $1}')
+                aliases+="$alias "
+            done
+            local completable=".. $(find . -maxdepth 1 -type d) $WD_COMMANDS $aliases"
+            complete -o nosort -W "$completable" wd
+        fi
+    fi
+}
+
+# makes "check_autocomplete" function run
+# every time the prompt becomes available.
+# I.E when the shell loads or a command has been run and returned.
+# ------
+# Please do not change this value as the function and / or command
+# will run each time you return to prompt.
+# To disable autocomplete just comment out the line below.
+if [ ! "$PROMPT_COMMAND" ]; then
+    PROMPT_COMMAND="__wd_check_autocomplete"
+else
+    PROMPT_COMMAND="$PROMPT_COMMAND;__wd_check_autocomplete"
+fi
