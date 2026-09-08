@@ -187,7 +187,8 @@ handle_list() {
                 echo -e "$raw_table" | awk 'NR<=2{print;next}{print | "sort -t\"|\" -k2"}'
                 ;;
             *)
-                echo "E_ARG"
+                echo -e "$raw_table" | awk 'NR<=2{print;next}{print | "sort -t\"|\" -k1"}'
+                # echo "E_ARG"
                 ;;
             esac
         else

@@ -25,13 +25,7 @@ __wd_check_autocomplete() {
     fi
 }
 
-# makes "check_autocomplete" function run
-# every time the prompt becomes available.
-# I.E when the shell loads or a command has been run and returned.
-# ------
-# Please do not change this value as the function and / or command
-# will run each time you return to prompt.
-# To disable autocomplete just comment out the line below.
+# To disable autocomplete just comment out the lines below.
 if [ ! "$PROMPT_COMMAND" ]; then
     PROMPT_COMMAND="__wd_check_autocomplete"
 else
