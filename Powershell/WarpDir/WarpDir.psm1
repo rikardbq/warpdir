@@ -231,15 +231,17 @@ function wd {
                     }
                     if ($cmd2) {
                         if ($cmd2 -eq "--sort") {
+                            $sorted_default = $default_list | Sort-Object { $_.Alias }
                             switch ($cmd3) {
                                 "alias" {
-                                    return $default_list | Sort-Object { $_.Alias }
+                                    return $sorted_default
                                 }
                                 "target" {
                                     return $default_list | Sort-Object { $_.Target }
                                 }
                                 default {
-                                    generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $WD_SORT_ARGS
+                                    return $sorted_default
+                                    # generate_error $WD_ERROR_KIND.FLAG_SORT_MISSING_ARGUMENT $WD_SORT_ARGS
                                 }
                             }
                         } else {
